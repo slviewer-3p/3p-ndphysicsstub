@@ -43,6 +43,14 @@ class LLConvexDecompositionImpl : public LLConvexDecomposition
 		static LLCDResult quitThread();
 		static LLCDResult quitSystem();
 
+		// Generate a decomposition object handle
+		void genDecomposition(int& decomp);
+		// Delete decomposition object handle
+		void deleteDecomposition(int decomp);
+		// Bind given decomposition handle
+		// Commands operate on currently bound decomposition
+		void bindDecomposition(int decomp);
+
 		// Sets *paramsOut to the address of the LLCDParam array and returns
 		// the length of the array
 		int getParameters(const LLCDParam** paramsOut) 

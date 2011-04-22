@@ -54,6 +54,21 @@ LLCDResult LLConvexDecompositionImpl::quitSystem()
 	return LLCD_NOT_IMPLEMENTED;
 }
 
+void LLConvexDecompositionImpl::genDecomposition(int& decomp)
+{
+
+}
+
+void LLConvexDecompositionImpl::deleteDecomposition(int decomp)
+{
+
+}
+
+void LLConvexDecompositionImpl::bindDecomposition(int decomp)
+{
+
+}
+
 LLCDResult LLConvexDecompositionImpl::setParam(const char* name, float val)
 {
 	return LLCD_NOT_IMPLEMENTED;

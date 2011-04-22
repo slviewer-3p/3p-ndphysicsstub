@@ -2,9 +2,9 @@
  * @file LLConvexDecomposition.cpp
  * @brief LLConvexDecomposition interface definition
  *
- * $LicenseInfo:firstyear=2002&license=viewerlgpl$
+ * $LicenseInfo:firstyear=2011&license=viewerlgpl$
  * Second Life Viewer Source Code
- * Copyright (C) 2010, Linden Research, Inc.
+ * Copyright (C) 2011, Linden Research, Inc.
  * 
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -148,6 +148,14 @@ public:
 	static LLCDResult initThread();
 	static LLCDResult quitThread();
 	static LLCDResult quitSystem();
+
+	// Generate a decomposition object handle
+	virtual void genDecomposition(int& decomp) = 0;
+	// Delete decomposition object handle
+	virtual void deleteDecomposition(int decomp) = 0;
+	// Bind given decomposition handle
+	// Commands operate on currently bound decomposition
+	virtual void bindDecomposition(int decomp) = 0;
 
 	// Sets *paramsOut to the address of the LLCDParam array and returns
 	// the number of parameters
