@@ -38,7 +38,7 @@ pushd "Source"
         ;;
         "darwin")
 			libdir="$top/stage/lib"
-            mkdir -p "$libdir"/lib_{debug,release}
+            mkdir -p "$libdir"/{debug,release}
 			make -C lib -f Makefile_mac clean
 			make -C lib -f Makefile_mac 
 			cp "lib/debug_stub/libllconvexdecompositionstub.a" \
@@ -48,7 +48,7 @@ pushd "Source"
 		;;
         "linux")
 			libdir="$top/stage/lib"
-            mkdir -p "$libdir"/lib_{debug,release}_client
+            mkdir -p "$libdir"/{debug,release}
 			make -C lib clean
 			make -C lib
 			cp "lib/debug_stub/libllconvexdecompositionstub.a" \
