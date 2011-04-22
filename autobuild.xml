@@ -1,79 +1,128 @@
 <?xml version="1.0" ?>
 <llsd>
 <map>
-    <key>llconvexdecompositionstub</key>
+    <key>package_description</key>
     <map>
-      <key>build</key>
-      <map>
-        <key>darwin</key>
-        <map>
-          <key>command</key>
-          <string>bash build-cmd.sh</string>
-          <key>directory</key>
-          <string>stage</string>
-        </map>
-        <key>linux</key>
-        <map>
-          <key>command</key>
-          <string>bash build-cmd.sh</string>
-          <key>directory</key>
-          <string>stage</string>
-        </map>
-        <key>windows</key>
-        <map>
-          <key>command</key>
-          <string>bash build-cmd.sh</string>
-          <key>directory</key>
-          <string>stage</string>
-        </map>
-      </map>
+      <key>description</key>
+      <string>Stub library for convex decomposition interface</string>
       <key>license</key>
       <string>LGPL</string>
-      <key>licensefile</key>
+      <key>license_file</key>
       <string>LICENSES/LLConvexDecompositionStubLicense.txt</string>
-      <key>manifest</key>
+      <key>name</key>
+      <string>llconvexdecompositionstub</string>
+      <key>platforms</key>
       <map>
         <key>common</key>
         <map>
-          <key>files</key>
+          <key>configurations</key>
+          <map>
+            <key>default</key>
+            <map>
+              <key>build</key>
+              <map>
+                <key>arguments</key>
+                <array>
+                  <string>../build-cmd.sh</string>
+                </array>
+                <key>command</key>
+                <string>bash</string>
+              </map>
+              <key>name</key>
+              <string>default</string>
+            </map>
+          </map>
+          <key>manifest</key>
           <array>
-            <string>libraries/include/*.h</string>
-            <string>LICENSES/LLConvexDecompositionStubLicense.txt</string>
+            <string>include/*.h</string>
           </array>
+          <key>name</key>
+          <string>common</string>
         </map>
         <key>darwin</key>
         <map>
-          <key>files</key>
+          <key>build_directory</key>
+          <string>stage</string>
+          <key>configurations</key>
+          <map>
+            <key>default</key>
+            <map>
+              <key>build</key>
+              <map>
+              </map>
+              <key>default</key>
+              <string>true</string>
+              <key>name</key>
+              <string>default</string>
+            </map>
+          </map>
+          <key>manifest</key>
           <array>
-            <string>libraries/universal-darwin/lib_debug/libllconvexdecompositionstub.a</string>
-            <string>libraries/universal-darwin/lib_release/libllconvexdecompositionstub.a</string>
+            <string>lib/release/libllconvexdecompositionstub.a</string>
+            <string>lib/debug/libllconvexdecompositionstub.a</string>
           </array>
+          <key>name</key>
+          <string>darwin</string>
         </map>
         <key>linux</key>
         <map>
-          <key>files</key>
+          <key>build_directory</key>
+          <string>stage</string>
+          <key>configurations</key>
+          <map>
+            <key>default</key>
+            <map>
+              <key>build</key>
+              <map>
+              </map>
+              <key>default</key>
+              <string>true</string>
+              <key>name</key>
+              <string>default</string>
+            </map>
+          </map>
+          <key>manifest</key>
           <array>
-            <string>libraries/i686-linux/lib_debug_client/libllconvexdecompositionstub.a</string>
-            <string>libraries/i686-linux/lib_release_client/libllconvexdecompositionstub.a</string>
+            <string>lib/release/libllconvexdecompositionstub.a</string>
+            <string>lib/debug/libllconvexdecompositionstub.a</string>
           </array>
+          <key>name</key>
+          <string>linux</string>
         </map>
         <key>windows</key>
         <map>
-          <key>files</key>
+          <key>build_directory</key>
+          <string>stage</string>
+          <key>configurations</key>
+          <map>
+            <key>default</key>
+            <map>
+              <key>build</key>
+              <map>
+              </map>
+              <key>default</key>
+              <string>true</string>
+              <key>name</key>
+              <string>default</string>
+            </map>
+          </map>
+          <key>manifest</key>
           <array>
-            <string>libraries/i686-win32/lib/debug/LLConvexDecompositionStub.lib</string>
-            <string>libraries/i686-win32/lib/debug/LLConvexDecompositionStub.pdb</string>
-            <string>libraries/i686-win32/lib/release/LLConvexDecompositionStub.lib</string>
+            <string>lib/debug/LLConvexDecompositionStub.lib</string>
+            <string>lib/debug/LLConvexDecompositionStub.pdb</string>
+            <string>lib/release/LLConvexDecompositionStub.lib</string>
           </array>
+          <key>name</key>
+          <string>windows</string>
         </map>
       </map>
-      <key>sourcedir</key>
-      <string>.</string>
-      <key>uploadtos3</key>
-      <boolean>true</boolean>
       <key>version</key>
       <string>0.3</string>
     </map>
+    <key>type</key>
+    <string>autobuild</string>
+    <key>version</key>
+    <string>1.2</string>
   </map>
 </llsd>
 

@@ -1,5 +1,7 @@
 #!/bin/sh
 
+cd "$(dirname "$0")"
+
 # turn on verbose debugging output for parabuild logs.
 set -x
 # make errors fatal
@@ -19,45 +21,47 @@ eval "$("$AUTOBUILD" source_environment)"
 set -x
 
 top="$(pwd)"
-cd "Source"
+pushd "Source"
     case "$AUTOBUILD_PLATFORM" in
         "windows")
+			load_vsvars
+
             build_sln "LLConvexDecomposition.sln" "Debug|Win32"
             build_sln "LLConvexDecomposition.sln" "Release|Win32"
-            mkdir -p ../stage/libraries/i686-win32/lib/{debug,release}
+            mkdir -p ../stage/lib/{debug,release}
             cp "lib/debug/LLConvexDecompositionStub.lib" \
-                "../stage/libraries/i686-win32/lib/debug/LLConvexDecompositionStub.lib"
+                "../stage/lib/debug/LLConvexDecompositionStub.lib"
             cp "lib/debug/LLConvexDecompositionStub.pdb" \
-                "../stage/libraries/i686-win32/lib/debug/LLConvexDecompositionStub.pdb"
+                "../stage/lib/debug/LLConvexDecompositionStub.pdb"
             cp "lib/release/LLConvexDecompositionStub.lib" \
-                "../stage/libraries/i686-win32/lib/release/LLConvexDecompositionStub.lib"
+                "../stage/lib/release/LLConvexDecompositionStub.lib"
         ;;
         "darwin")
-			libdir="$top/stage/libraries/universal-darwin/"
+			libdir="$top/stage/lib"
             mkdir -p "$libdir"/lib_{debug,release}
 			make -C lib -f Makefile_mac clean
 			make -C lib -f Makefile_mac 
 			cp "lib/debug_stub/libllconvexdecompositionstub.a" \
-				"$libdir/lib_debug/libllconvexdecompositionstub.a"
+				"$libdir/debug/libllconvexdecompositionstub.a"
 			cp "lib/release_stub/libllconvexdecompositionstub.a" \
-				"$libdir/lib_release/libllconvexdecompositionstub.a"
+				"$libdir/release/libllconvexdecompositionstub.a"
 		;;
         "linux")
-			libdir="$top/stage/libraries/i686-linux/"
+			libdir="$top/stage/lib"
             mkdir -p "$libdir"/lib_{debug,release}_client
 			make -C lib clean
 			make -C lib
 			cp "lib/debug_stub/libllconvexdecompositionstub.a" \
-				"$libdir/lib_debug_client/libllconvexdecompositionstub.a"
+				"$libdir/debug/libllconvexdecompositionstub.a"
 			cp "lib/release_stub/libllconvexdecompositionstub.a" \
-				"$libdir/lib_release_client/libllconvexdecompositionstub.a"
+				"$libdir/release/libllconvexdecompositionstub.a"
         ;;
     esac
-    mkdir -p "../stage/libraries/include"
-    cp "lib/LLConvexDecomposition.h" "../stage/libraries/include/llconvexdecomposition.h"
+    mkdir -p "../stage/include"
+    cp "lib/LLConvexDecomposition.h" "../stage/include/llconvexdecomposition.h"
     mkdir -p ../stage/LICENSES
     cp LICENSE_STUB.txt ../stage/LICENSES/LLConvexDecompositionStubLicense.txt
-cd "$top"
+popd
 
 pass
 
