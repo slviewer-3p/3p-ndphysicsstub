@@ -84,12 +84,17 @@ LLCDResult LLConvexDecompositionImpl::setParam(const char* name, int val)
 	return LLCD_NOT_IMPLEMENTED;
 }
 
-LLCDResult LLConvexDecompositionImpl::setMeshData( const LLCDMeshData* data )
+LLCDResult LLConvexDecompositionImpl::setMeshData( const LLCDMeshData* data, bool vertex_based )
 {
 	return LLCD_NOT_IMPLEMENTED;
 }
 
 LLCDResult LLConvexDecompositionImpl::registerCallback(int stage, llcdCallbackFunc callback )
+{
+	return LLCD_NOT_IMPLEMENTED;
+}
+
+LLCDResult LLConvexDecompositionImpl::buildSingleHull()
 {
 	return LLCD_NOT_IMPLEMENTED;
 }
@@ -102,6 +107,12 @@ LLCDResult LLConvexDecompositionImpl::executeStage(int stage)
 int LLConvexDecompositionImpl::getNumHullsFromStage(int stage)
 {
 	return 0;
+}
+
+LLCDResult LLConvexDecompositionImpl::getSingleHull( LLCDHull* hullOut ) 
+{
+	memset( hullOut, 0, sizeof(LLCDHull) );
+	return LLCD_NOT_IMPLEMENTED;
 }
 
 LLCDResult LLConvexDecompositionImpl::getHullFromStage( int stage, int hull, LLCDHull* hullOut )

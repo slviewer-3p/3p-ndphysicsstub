@@ -69,14 +69,16 @@ class LLConvexDecompositionImpl : public LLConvexDecomposition
 		LLCDResult	setParam(const char* name, float val);
 		LLCDResult	setParam(const char* name, int val);
 		LLCDResult	setParam(const char* name, bool val);
-		LLCDResult	setMeshData( const LLCDMeshData* data );
+		LLCDResult	setMeshData( const LLCDMeshData* data, bool vertex_based );
 		LLCDResult	registerCallback(int stage, llcdCallbackFunc callback );
 
 		LLCDResult	executeStage(int stage);
+		LLCDResult	buildSingleHull() ;
 
 		int getNumHullsFromStage(int stage);
 
 		LLCDResult	getHullFromStage( int stage, int hull, LLCDHull* hullOut );
+		LLCDResult  getSingleHull( LLCDHull* hullOut ) ;
 		
 		// TODO: Implement lock of some kind to disallow this call if data not yet ready
 		LLCDResult	getMeshFromStage( int stage, int hull, LLCDMeshData* meshDataOut);
