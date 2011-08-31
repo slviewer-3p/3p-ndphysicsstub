@@ -1,5 +1,5 @@
 
-#ifndef ND_CONVEX_DECOMP_HAC_H
+#ifndef ND_CONVEX_DECOMP_HACD_H
 #define ND_CONVEX_DECOMP_HACD_H
 
 #include "LLConvexDecomposition.h"
