@@ -2,3 +2,4 @@ syntax: glob
 stage
 *.o
 *.a
+build/
