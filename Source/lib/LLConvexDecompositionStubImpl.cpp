@@ -26,6 +26,7 @@
  */
 
 
+#include <string.h>
 #include <memory>
 #include "LLConvexDecompositionStubImpl.h"
 
