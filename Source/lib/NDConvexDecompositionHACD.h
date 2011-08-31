@@ -1,7 +1,6 @@
 
-
-#ifndef LL_CONVEX_DECOMP_UTIL_H
-#define LL_CONVEX_DECOMP_UTIL_H
+#ifndef ND_CONVEX_DECOMP_HAC_H
+#define ND_CONVEX_DECOMP_HACD_H
 
 #include "LLConvexDecomposition.h"
 
@@ -68,4 +67,4 @@ class NDConvexDecompositionHACD : public LLConvexDecomposition
 		NDConvexDecompositionHACD() {}
 };
 
-#endif //LL_CONVEX_DECOMP_UTIL_H
+#endif
