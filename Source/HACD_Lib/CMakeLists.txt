@@ -1,11 +1,8 @@
 project(HACD_LIB CXX C)
-include(${CMAKE_COMMON_INC})
-set(LIB_TYPE "STATIC" CACHE STRING "STATIC, SHARED or MODULE?")
-message("[HACD] \t LIB_TYPE " ${LIB_TYPE})
-add_library(HACD_LIB ${PROJECT_CPP_FILES} ${PROJECT_C_FILES} ${PROJECT_INC_FILES} ${PROJECT_INL_FILES})
 
-message("[HACD] \t -> CMAKE_INSTALL_PREFIX " ${CMAKE_INSTALL_PREFIX})
-install(TARGETS HACD_LIB DESTINATION bin)
-install(FILES ${PROJECT_INC_FILES} DESTINATION include)
-install(FILES ${PROJECT_INL_FILES} DESTINATION include)
+set (SOURCE_FILES src/hacdGraph.cpp  src/hacdHACD.cpp  src/hacdICHull.cpp  src/hacdManifoldMesh.cpp )
+file (GLOB INCLUDE_FILES inc/*.h )
 
+add_library(hacd STATIC ${SOURCE_FILES} ${INCLUDE_FILES} )
+
+install( TARGETS hacd DESTINATION lib )
