@@ -33,7 +33,7 @@
 #define NULL 0 
 #endif
 
-#include "LLConvexDecompositionStubImpl.h"
+#include "NDConvexDecompositionHACD.h"
 
 #include "LLConvexDecomposition.h"
 
@@ -48,13 +48,13 @@
 	}
 	else
 	{
-		return LLConvexDecompositionImpl::getInstance();
+		return NDConvexDecompositionHACD::getInstance();
 	}
 }
 
 /*static */LLCDResult LLConvexDecomposition::initSystem()
 {
-	LLCDResult result = LLConvexDecompositionImpl::initSystem();
+	LLCDResult result = NDConvexDecompositionHACD::initSystem();
 	if ( result == LLCD_OK )
 	{
 		s_isInitialized = true;
@@ -64,17 +64,17 @@
 
 /*static */LLCDResult LLConvexDecomposition::initThread()
 {
-	return LLConvexDecompositionImpl::initThread();
+	return NDConvexDecompositionHACD::initThread();
 }
 
 /*static */LLCDResult LLConvexDecomposition::quitThread()
 {
-	return LLConvexDecompositionImpl::quitThread();
+	return NDConvexDecompositionHACD::quitThread();
 }
 
 /*static */LLCDResult LLConvexDecomposition::quitSystem()
 {
-	return LLConvexDecompositionImpl::quitSystem();
+	return NDConvexDecompositionHACD::quitSystem();
 }
 
 

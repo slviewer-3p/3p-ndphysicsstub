@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.8)
 
-set (SOURCE_FILES LLConvexDecomposition.cpp LLConvexDecompositionStubImpl.cpp )
+set (SOURCE_FILES LLConvexDecomposition.cpp NDConvexDecompositionHACD.cpp )
 
 add_library( nd_convexdecompositionHACD STATIC ${SOURCE_FILES} )
 
