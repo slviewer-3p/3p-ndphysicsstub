@@ -76,6 +76,7 @@ LLCDResult setMeshData( const LLCDMeshData* data, bool vertex_based, HACDDecoder
 	if( !vertex_based && ( (data->mNumTriangles < 1) || ! data->mIndexBase ) )
 		return LLCD_INVALID_MESH_DATA;
 
+	aDec->clear();
 	int nCount = data->mNumVertices;
 	float* pVertex = const_cast<float*>(data->mVertexBase);
 	int nStride = data->mVertexStrideBytes / sizeof(float);
