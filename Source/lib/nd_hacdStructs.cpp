@@ -75,8 +75,8 @@ void HACDDecoder::clear()
     mVertices.clear();
     mTriangles.clear();
 
-    mStages[0].clear();
-    mStages[1].clear();
+	for( size_t i = 0;  i < mStages.size(); ++i )
+		mStages[i].clear();
 
     mSingleHull.clear();
   }
