@@ -34,6 +34,13 @@ typedef tVecLong (*fFromIXX)( void *&, int );
 
 const int MAX_VERTICES_PER_HULL     = 256;    // see http://wiki.secondlife.com/wiki/Mesh/Mesh_physics
 const int MIN_NUMBER_OF_CLUSTERS    = 1;
-const int CONCAVITY_FOR_SINGLE_HULL = 10000;  // Use a high value so HACD will generate just one hull
+
+int const TO_SINGLE_HULL_TRIES = 10;
+
+ // Use a high value so HACD will generate just one hull. For now we use the same concavity for each run.
+int const CONCAVITY_FOR_SINGLE_HULL[  TO_SINGLE_HULL_TRIES ] = { 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000 }; 
+
+// Max distance to connect CC. Increase this each run.
+double const CONNECT_DISTS[ TO_SINGLE_HULL_TRIES ] = { 30, 60, 120, 240, 480, 960, 1920, 3840, 7680, 10000 };
 
 #endif

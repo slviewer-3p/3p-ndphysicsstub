@@ -119,7 +119,7 @@ LLCDResult nd_hacdConvexDecomposition::executeStage(int stage)
 		return LLCD_INVALID_STAGE;
 
 	HACDDecoder *pC = mDecoders[ mCurrentDecoder ];
-	tHACD *pHACD = init( 1, MIN_NUMBER_OF_CLUSTERS, MAX_VERTICES_PER_HULL, pC );
+	tHACD *pHACD = init( 1, MIN_NUMBER_OF_CLUSTERS, MAX_VERTICES_PER_HULL, CONNECT_DISTS[0], pC );
 
 	DecompData oRes = decompose( pHACD );
 
@@ -143,21 +143,41 @@ int nd_hacdConvexDecomposition::getNumHullsFromStage(int stage)
 	return pC->mStages[stage].mHulls.size();
 }
 
+DecompData toSingleHull( HACDDecoder *aDecoder, LLCDResult &aRes )
+{
+  aRes = LLCD_REQUEST_OUT_OF_RANGE;
+
+  for( int i = 0; i < TO_SINGLE_HULL_TRIES; ++i )
+    {
+      tHACD *pHACD = init( CONCAVITY_FOR_SINGLE_HULL[i], 1, MAX_VERTICES_PER_HULL, CONNECT_DISTS[i], aDecoder );
+
+      DecompData oRes = decompose( pHACD );
+      delete pHACD;
+
+      if( oRes.mHulls.size() == 1 )
+	{
+	  aRes = LLCD_OK;
+	  return oRes;
+	}
+    }
+
+  return DecompData();
+}
+
 LLCDResult nd_hacdConvexDecomposition::getSingleHull( LLCDHull* hullOut ) 
 {
-	HACDDecoder *pC = mDecoders[ mCurrentDecoder ];
-	tHACD *pHACD = init( CONCAVITY_FOR_SINGLE_HULL, 1, MAX_VERTICES_PER_HULL, pC );
+  HACDDecoder *pC = mDecoders[ mCurrentDecoder ];
 
-	DecompData oRes = decompose( pHACD );
-	delete pHACD;
+  LLCDResult res;
+  DecompData oRes = ::toSingleHull( pC, res );
+  
+  if( LLCD_OK != res || oRes.mHulls.size() != 1 )
+    return res;
 
-	if( oRes.mHulls.size() != 1 )
-		return LLCD_REQUEST_OUT_OF_RANGE;
+  pC->mSingleHull = oRes.mHulls[0];
+  pC->mSingleHull.toLLHull( hullOut );
 
-	pC->mSingleHull = oRes.mHulls[0];
-	pC->mSingleHull.toLLHull( hullOut );
-
-	return LLCD_OK;
+  return LLCD_OK;
 }
 
 LLCDResult nd_hacdConvexDecomposition::getHullFromStage( int stage, int hull, LLCDHull* hullOut )
@@ -211,16 +231,12 @@ LLCDResult nd_hacdConvexDecomposition::generateSingleHullMeshFromMesh(LLCDMeshDa
 	if( LLCD_OK != res )
 	  return res;
 
-	tHACD *pHACD = init( CONCAVITY_FOR_SINGLE_HULL, 1, MAX_VERTICES_PER_HULL, mSingleHullMeshFromMesh );
-
-	DecompData oRes = decompose( pHACD );
-	delete pHACD;
-
-	if( oRes.mHulls.size() != 1 )
-	  return LLCD_REQUEST_OUT_OF_RANGE;
+	DecompData oRes = ::toSingleHull( mSingleHullMeshFromMesh, res );
+  
+	if( LLCD_OK != res || oRes.mHulls.size() != 1 )
+	  return res;
 
 	mSingleHullMeshFromMesh->mSingleHull = oRes.mHulls[0];
-
 	mSingleHullMeshFromMesh->mSingleHull.toLLMesh( meshOut );
  
 	return LLCD_OK;

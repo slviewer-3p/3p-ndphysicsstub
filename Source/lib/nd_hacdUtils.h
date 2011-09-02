@@ -22,7 +22,7 @@
 #include "nd_hacdStructs.h"
 #include "LLConvexDecomposition.h"
 
-tHACD* init( int nConcavity, int nClusters, int nMaxVerticesPerHull, HACDDecoder *aData );
+tHACD* init( int nConcavity, int nClusters, int nMaxVerticesPerHull, double dMaxConnectDist, HACDDecoder *aData );
 DecompData decompose( tHACD *aHACD );
 
 tVecLong fromI16( void *& pPtr, int aStride );

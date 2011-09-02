@@ -18,7 +18,7 @@
 
 #include "nd_hacdUtils.h"
 
-tHACD* init( int nConcavity, int nClusters, int nMaxVerticesPerHull, HACDDecoder *aData )
+tHACD* init( int nConcavity, int nClusters, int nMaxVerticesPerHull, double dMaxConnectDist, HACDDecoder *aData )
 {
 	tHACD *pDec = new tHACD();
 	pDec->SetPoints( &aData->mVertices[0] );
@@ -38,6 +38,7 @@ tHACD* init( int nConcavity, int nClusters, int nMaxVerticesPerHull, HACDDecoder
 	pDec->SetAddFacesPoints(true);
 	pDec->SetNVerticesPerCH( nMaxVerticesPerHull );
 	pDec->SetConcavity( nConcavity );
+	pDec->SetConnectDist( dMaxConnectDist );
   
 	return pDec;
 }
