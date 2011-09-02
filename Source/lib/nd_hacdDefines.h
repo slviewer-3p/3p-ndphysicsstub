@@ -32,4 +32,8 @@ typedef HACD::Vec3< long > tVecLong;
 
 typedef tVecLong (*fFromIXX)( void *&, int );
 
+const int MAX_VERTICES_PER_HULL     = 256;    // see http://wiki.secondlife.com/wiki/Mesh/Mesh_physics
+const int MIN_NUMBER_OF_CLUSTERS    = 1;
+const int CONCAVITY_FOR_SINGLE_HULL = 10000;  // Use a high value so HACD will generate just one hull
+
 #endif

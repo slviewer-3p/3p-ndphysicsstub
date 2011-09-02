@@ -119,7 +119,7 @@ LLCDResult nd_hacdConvexDecomposition::executeStage(int stage)
 		return LLCD_INVALID_STAGE;
 
 	HACDDecoder *pC = mDecoders[ mCurrentDecoder ];
-	tHACD *pHACD = init( 1, 4, 256, pC );
+	tHACD *pHACD = init( 1, MIN_NUMBER_OF_CLUSTERS, MAX_VERTICES_PER_HULL, pC );
 
 	DecompData oRes = decompose( pHACD );
 
@@ -146,7 +146,7 @@ int nd_hacdConvexDecomposition::getNumHullsFromStage(int stage)
 LLCDResult nd_hacdConvexDecomposition::getSingleHull( LLCDHull* hullOut ) 
 {
 	HACDDecoder *pC = mDecoders[ mCurrentDecoder ];
-	tHACD *pHACD = init( 10000, 1, 256, pC );
+	tHACD *pHACD = init( CONCAVITY_FOR_SINGLE_HULL, 1, MAX_VERTICES_PER_HULL, pC );
 
 	DecompData oRes = decompose( pHACD );
 	delete pHACD;

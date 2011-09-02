@@ -33,7 +33,6 @@ tHACD* init( int nConcavity, int nClusters, int nMaxVerticesPerHull, HACDDecoder
 	pDec->SetCompacityWeight(0.1f);
 	pDec->SetVolumeWeight(0);
 	pDec->SetNClusters( nClusters );
-	//    mDe	c->SetCallBack(this);
 	pDec->SetAddExtraDistPoints(false);
 	pDec->SetAddNeighboursDistPoints(false);
 	pDec->SetAddFacesPoints(true);
