@@ -211,7 +211,7 @@ LLCDResult nd_hacdConvexDecomposition::generateSingleHullMeshFromMesh(LLCDMeshDa
 	if( LLCD_OK != res )
 	  return res;
 
-	tHACD *pHACD = init( 10000, 1, 256, mSingleHullMeshFromMesh );
+	tHACD *pHACD = init( CONCAVITY_FOR_SINGLE_HULL, 1, MAX_VERTICES_PER_HULL, mSingleHullMeshFromMesh );
 
 	DecompData oRes = decompose( pHACD );
 	delete pHACD;
