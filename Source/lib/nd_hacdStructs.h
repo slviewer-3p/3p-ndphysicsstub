@@ -22,8 +22,8 @@
 #include "nd_hacdDefines.h"
 #include <vector>
 
-class LLCDHull;
-class LLCDMeshData;
+struct LLCDHull;
+struct LLCDMeshData;
 
 struct DecompHull
 {

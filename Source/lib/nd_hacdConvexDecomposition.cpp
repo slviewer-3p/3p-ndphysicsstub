@@ -137,7 +137,7 @@ int nd_hacdConvexDecomposition::getNumHullsFromStage( int stage )
 	if ( !pC )
 		return 0;
 
-	if ( stage < 0 || stage >= pC->mStages.size() )
+	if ( stage < 0 || static_cast<size_t>(stage) >= pC->mStages.size() )
 		return 0;
 
 	return pC->mStages[stage].mHulls.size();
@@ -186,12 +186,12 @@ LLCDResult nd_hacdConvexDecomposition::getHullFromStage( int stage, int hull, LL
 
 	memset( hullOut, 0, sizeof( LLCDHull ) );
 
-	if ( stage < 0 || stage >= pC->mStages.size() )
+	if ( stage < 0 || static_cast<size_t>(stage) >= pC->mStages.size() )
 		return LLCD_INVALID_STAGE;
 
 	DecompData &oData = pC->mStages[ stage ];
 
-	if ( hull < 0 || hull >= oData.mHulls.size() )
+	if ( hull < 0 ||static_cast<size_t>(hull) >= oData.mHulls.size() )
 		return LLCD_REQUEST_OUT_OF_RANGE;
 
 	oData.mHulls[ hull ].toLLHull( hullOut );
@@ -204,12 +204,12 @@ LLCDResult nd_hacdConvexDecomposition::getMeshFromStage( int stage, int hull, LL
 
 	memset( meshDataOut, 0, sizeof( LLCDHull ) );
 
-	if ( stage < 0 || stage >= pC->mStages.size() )
+	if ( stage < 0 || static_cast<size_t>(stage) >= pC->mStages.size() )
 		return LLCD_INVALID_STAGE;
 
 	DecompData &oData = pC->mStages[ stage ];
 
-	if ( hull < 0 || hull >= oData.mHulls.size() )
+	if ( hull < 0 || static_cast<size_t>(hull) >= oData.mHulls.size() )
 		return LLCD_REQUEST_OUT_OF_RANGE;
 
 	oData.mHulls[ hull ].toLLMesh( meshDataOut );

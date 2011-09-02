@@ -31,11 +31,11 @@ void DecompHull::computeLLVertices()
 {
 	if ( mLLVertices.size()*3 != mVertices.size() )
 	{
-		for ( int i = 0; i < mVertices.size(); ++i )
+		for ( size_t i = 0; i < mVertices.size(); ++i )
 		{
-			mLLVertices.push_back( mVertices[i].X() );
-			mLLVertices.push_back( mVertices[i].Y() );
-			mLLVertices.push_back( mVertices[i].Z() );
+			mLLVertices.push_back( static_cast<float>( mVertices[i].X() ) );
+			mLLVertices.push_back( static_cast<float>( mVertices[i].Y() ) );
+			mLLVertices.push_back( static_cast<float>( mVertices[i].Z() ) );
 		}
 	}
 }
@@ -44,7 +44,7 @@ void DecompHull::computeLLTriangles()
 {
 	if ( mLLTriangles.size()*3 != mTriangles.size() )
 	{
-		for ( int i = 0; i < mTriangles.size(); ++i )
+		for ( size_t i = 0; i < mTriangles.size(); ++i )
 		{
 			mLLTriangles.push_back( mTriangles[i].X() );
 			mLLTriangles.push_back( mTriangles[i].Y() );

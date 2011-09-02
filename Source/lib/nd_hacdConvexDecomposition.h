@@ -23,7 +23,7 @@
 
 #include <map>
 
-class HACDDecoder;
+struct HACDDecoder;
 
 class nd_hacdConvexDecomposition : public LLConvexDecomposition
 {
