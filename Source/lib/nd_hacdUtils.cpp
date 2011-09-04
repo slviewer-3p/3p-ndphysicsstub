@@ -33,7 +33,7 @@ tHACD* init( int nConcavity, int nClusters, int nMaxVerticesPerHull, double dMax
 	pDec->SetCompacityWeight( 0.1f );
 	pDec->SetVolumeWeight( 0 );
 	pDec->SetNClusters( nClusters );
-	pDec->SetAddExtraDistPoints( false );
+	pDec->SetAddExtraDistPoints( true );
 	pDec->SetAddNeighboursDistPoints( false );
 	pDec->SetAddFacesPoints( true );
 	pDec->SetNVerticesPerCH( nMaxVerticesPerHull );
