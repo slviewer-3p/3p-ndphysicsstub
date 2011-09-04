@@ -53,16 +53,15 @@ DecompData decompose( tHACD *aHACD )
 
 	for ( int i = 0; i < nClusters; ++i )
 	{
-		int nVertices = aHACD->GetNPointsCH( 0 );
-		int nTriangles = aHACD->GetNTrianglesCH( 0 );
+		int nVertices = aHACD->GetNPointsCH( i );
+		int nTriangles = aHACD->GetNTrianglesCH( i );
 		DecompHull oHull;
 
 		oHull.mVertices.resize( nVertices );
 		oHull.mTriangles.resize( nTriangles );
-		aHACD->GetCH( 0, &oHull.mVertices[0], &oHull.mTriangles[0] );
+		aHACD->GetCH( i, &oHull.mVertices[0], &oHull.mTriangles[0] );
 
 		oRet.mHulls.push_back( oHull );
-
 	}
 
 	return oRet;
