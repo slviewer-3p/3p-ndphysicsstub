@@ -116,6 +116,10 @@ namespace HACD
         if (m_ccConnectDist >= 0.0)
         {
             m_graph.ExtractCCs();
+            char msg[1024];
+            sprintf(msg, "nCC %lu\n", m_graph.m_nCCs);
+            (*m_callBack)(msg, 0.0, 0.0,  m_graph.GetNVertices());
+            
             if (m_graph.m_nCCs > 1) 
             {
                 std::vector< std::set<long> > cc2V;
@@ -162,7 +166,7 @@ namespace HACD
 									}
                                 }
                             }
-                            if (distC1C2 <= m_ccConnectDist && t1 > 0 && t2 > 0)
+                            if (distC1C2 <= m_ccConnectDist && t1 >= 0 && t2 >= 0)
                             {
 								
                                 m_graph.AddEdge(t1, t2);                    
