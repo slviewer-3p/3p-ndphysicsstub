@@ -178,6 +178,8 @@ LLCDResult nd_hacdConvexDecomposition::getSingleHull( LLCDHull* hullOut )
 {
 	HACDDecoder *pC = mDecoders[ mCurrentDecoder ];
 
+	memset( hullOut, 0, sizeof( LLCDHull ) );
+
 	LLCDResult res;
 	DecompData oRes = ::toSingleHull( pC, res );
 
