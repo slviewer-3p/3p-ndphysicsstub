@@ -20,6 +20,8 @@
 #define ND_HACD_DECOMPSTRUCTS_H
 
 #include "nd_hacdDefines.h"
+#include "hacdHACD.h"
+#include "LLConvexDecomposition.h"
 #include <vector>
 
 struct LLCDHull;
@@ -50,7 +52,7 @@ struct DecompData
 	void clear();
 };
 
-struct HACDDecoder
+struct HACDDecoder: public HACD::ICallback
 {
 	std::vector< tVecDbl > mVertices;
 	std::vector< tVecLong > mTriangles;
@@ -58,8 +60,17 @@ struct HACDDecoder
 	std::vector< DecompData > mStages;
 	DecompHull mSingleHull;
 
+	llcdCallbackFunc mCallback;
+
 	HACDDecoder();
 	void clear();
+
+	virtual void operator()( char const *aMsg, double aProgress, double aConcavity, size_t aVertices)
+	{
+		if( mCallback )
+			(*mCallback)(aMsg, aProgress, aVertices );
+	}
+
 };
 
 

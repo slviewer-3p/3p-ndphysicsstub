@@ -105,7 +105,17 @@ LLCDResult nd_hacdConvexDecomposition::setMeshData( const LLCDMeshData* data, bo
 
 LLCDResult nd_hacdConvexDecomposition::registerCallback( int stage, llcdCallbackFunc callback )
 {
-	return LLCD_NOT_IMPLEMENTED;
+	if( mDecoders.end() == mDecoders.find( mCurrentDecoder ) )
+	{
+		std::cerr << "registerCallback: no decoder active!" << std::endl;
+		return LLCD_OK;
+	}
+
+	HACDDecoder *pC = mDecoders[ mCurrentDecoder ];
+	pC->mCallback = callback;
+	
+
+	return LLCD_OK;
 }
 
 LLCDResult nd_hacdConvexDecomposition::buildSingleHull()

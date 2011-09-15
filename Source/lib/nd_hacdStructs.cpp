@@ -86,6 +86,7 @@ void DecompData::clear()
 HACDDecoder::HACDDecoder()
 {
 	mStages.resize( NUM_STAGES );
+	mCallback = 0;
 }
 
 void HACDDecoder::clear()
@@ -97,6 +98,8 @@ void HACDDecoder::clear()
 		mStages[i].clear();
 
 	mSingleHull.clear();
+
+	mCallback = 0;
 }
 
 

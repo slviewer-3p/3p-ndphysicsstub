@@ -40,6 +40,8 @@ tHACD* init( int nConcavity, int nClusters, int nMaxVerticesPerHull, double dMax
 	pDec->SetConcavity( nConcavity );
 	pDec->SetConnectDist( dMaxConnectDist );
 
+	pDec->SetCallBack( aData );
+
 	return pDec;
 }
 
