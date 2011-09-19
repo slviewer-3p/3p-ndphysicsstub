@@ -68,7 +68,7 @@ struct HACDDecoder: public HACD::ICallback
 	virtual void operator()( char const *aMsg, double aProgress, double aConcavity, size_t aVertices)
 	{
 		if( mCallback )
-			(*mCallback)(aMsg, aProgress, aVertices );
+			(*mCallback)(aMsg, static_cast<int>(aProgress), aVertices );
 	}
 
 };
