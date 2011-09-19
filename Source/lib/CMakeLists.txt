@@ -1,5 +1,10 @@
 cmake_minimum_required(VERSION 2.8)
 
+if( MSVC )
+   add_definitions(-D_SECURE_STL=0 -D_HAS_ITERATOR_DEBUGGING=0)
+endif( MSVC )
+
+
 set (SOURCE_FILES LLConvexDecomposition.cpp nd_hacdConvexDecomposition.cpp nd_hacdStructs.cpp nd_hacdUtils.cpp )
 file(GLOB HEADER_FILES *.h)
 
