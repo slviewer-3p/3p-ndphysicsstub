@@ -33,7 +33,7 @@ void EnterExitTracer::doTrace( char const *aPrefix )
 	if( aPrefix )
 		str << aPrefix;
 
-	str << mFunc << std::endl;	
+	str << mFunc;	
 	mTracer->trace( str.str().c_str() );
 }
 

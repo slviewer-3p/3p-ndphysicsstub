@@ -39,8 +39,7 @@ namespace ndStructTracer
 		str << fixed
 			<< "\tX: " << aValue.X()
 			<< " Y: " << aValue.Y()
-			<< " Z: " << aValue.Z()
-			<< endl;
+			<< " Z: " << aValue.Z();
 
 		aTracer->traceData( str.str().c_str() );
 	}
@@ -71,13 +70,13 @@ namespace ndStructTracer
 		aTracer->startTraceData("Hulls");
 
 		stringstream str;
-		str << "Hulls: " << aData.mHulls.size() << endl;
+		str << "Hulls: " << aData.mHulls.size();
 		aTracer->traceData( str.str().c_str() );
 		str.seekp(0);
 
 		for( size_t i = 0; i < aData.mHulls.size(); ++i )
 		{
-			str << "Hull #" << i << endl;
+			str << "Hull #" << i;
 			aTracer->traceData( str.str().c_str() );
 			str.seekp(0);
 
@@ -95,8 +94,7 @@ namespace ndStructTracer
 		str << fixed
 			<< "X: " << aX
 			<< "Y: " << aY
-			<< "Z: " << aZ
-			<< endl;
+			<< "Z: " << aZ;
 
 		aTracer->traceData( str.str().c_str() );
 	}
@@ -154,8 +152,7 @@ namespace ndStructTracer
 		stringstream str;
 		str << "LLCDMeshData vertex based: " << strVBased
 			<< "# vertices " << aData->mNumVertices
-			<< "# triangles " << aData->mNumTriangles
-			<< endl;
+			<< "# triangles " << aData->mNumTriangles;
 
 		aTracer->traceData( str.str().c_str() );
 
@@ -175,7 +172,7 @@ namespace ndStructTracer
 		aTracer->startTraceData("LLCDHull");
 
 		stringstream str;
-		str << "LLCDHull # vertices " << aData->mNumVertices << endl;
+		str << "LLCDHull # vertices " << aData->mNumVertices;
 
 		aTracer->traceData( str.str().c_str() );
 
