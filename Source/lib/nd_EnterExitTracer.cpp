@@ -19,7 +19,7 @@
 #include "nd_EnterExitTracer.h"
 
 #include <vector>
-#include <string.h>
+#include <sstream>
 
 void EnterExitTracer::doTrace( char const *aPrefix )
 {
@@ -29,17 +29,12 @@ void EnterExitTracer::doTrace( char const *aPrefix )
 	if( ndConvexDecompositionTracer::eTraceFunctions == (mTracer->getLevel() & ndConvexDecompositionTracer::eTraceFunctions ) )
 		return;
 
+	std::stringstream str;
 	if( aPrefix )
-	{
-		std::vector< char > aBuffer;
-		aBuffer.resize( strlen( aPrefix ) + strlen( mFunc ) + 1 );
-		strcpy( &aBuffer[0], aPrefix );
-		strcat( &aBuffer[0], mFunc );
-		mTracer->trace( &aBuffer[0] );
-	}
-	else
-		mTracer->trace( mFunc );
-	
+		str << aPrefix;
+
+	str << mFunc << std::endl;	
+	mTracer->trace( str.str().c_str() );
 }
 
 EnterExitTracer::EnterExitTracer( char const *aFunc, ndConvexDecompositionTracer *aTracer )
