@@ -39,7 +39,7 @@ public:
 	virtual void traceData( char const *a_strData ) = 0;
 	virtual void endTraceData() = 0;
 
-	virtual ETraceLevel getLevel() = 0;
+	virtual int getLevel() = 0;
 
 	virtual void addref() = 0;
 	virtual void release() = 0;
