@@ -222,5 +222,8 @@ private:
 	static bool s_isInitialized;
 };
 
+// Pull in our trace interface
+#include "ndConvexDecomposition.h"
+
 #endif //LL_CONVEX_DECOMPOSITION
 

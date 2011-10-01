@@ -23,6 +23,9 @@
 #include "nd_hacdDefines.h"
 #include "nd_hacdStructs.h"
 #include "nd_hacdUtils.h"
+#include "ndConvexDecomposition.h"
+#include "nd_EnterExitTracer.h"
+#include "nd_StructTracer.h"
 
 LLConvexDecomposition* nd_hacdConvexDecomposition::getInstance()
 {
@@ -35,16 +38,18 @@ nd_hacdConvexDecomposition::nd_hacdConvexDecomposition()
 	mNextId = 0;
 	mCurrentDecoder = 0;
 	mSingleHullMeshFromMesh = new HACDDecoder();
+	mTracer = 0;
 }
 
 nd_hacdConvexDecomposition::~nd_hacdConvexDecomposition()
 {
+	if( mTracer )
+		mTracer->release();
 }
 
 LLCDResult nd_hacdConvexDecomposition::initSystem()
 {
 	return LLCD_OK;
-
 }
 
 LLCDResult nd_hacdConvexDecomposition::initThread()
@@ -79,32 +84,40 @@ void nd_hacdConvexDecomposition::deleteDecomposition( int decomp )
 
 void nd_hacdConvexDecomposition::bindDecomposition( int decomp )
 {
+	TRACE_FUNC( mTracer );
 	mCurrentDecoder = decomp;
 }
 
 LLCDResult nd_hacdConvexDecomposition::setParam( const char* name, float val )
 {
+	TRACE_FUNC( mTracer );
 	return LLCD_NOT_IMPLEMENTED;
 }
 
 LLCDResult nd_hacdConvexDecomposition::setParam( const char* name, bool val )
 {
+	TRACE_FUNC( mTracer );
 	return LLCD_NOT_IMPLEMENTED;
 }
 
 LLCDResult nd_hacdConvexDecomposition::setParam( const char* name, int val )
 {
+	TRACE_FUNC( mTracer );
 	return LLCD_NOT_IMPLEMENTED;
 }
 
 LLCDResult nd_hacdConvexDecomposition::setMeshData( const LLCDMeshData* data, bool vertex_based )
 {
+	TRACE_FUNC( mTracer );
+	ndStructTracer::trace( data, vertex_based, mTracer );
+
 	HACDDecoder *pC = mDecoders[ mCurrentDecoder ];
 	return ::setMeshData( data, vertex_based, pC );
 }
 
 LLCDResult nd_hacdConvexDecomposition::registerCallback( int stage, llcdCallbackFunc callback )
 {
+	TRACE_FUNC( mTracer );
 	if( mDecoders.end() == mDecoders.find( mCurrentDecoder ) )
 	{
 		std::cerr << "registerCallback: no decoder active!" << std::endl;
@@ -120,11 +133,13 @@ LLCDResult nd_hacdConvexDecomposition::registerCallback( int stage, llcdCallback
 
 LLCDResult nd_hacdConvexDecomposition::buildSingleHull()
 {
+	TRACE_FUNC( mTracer );
 	return LLCD_OK;
 }
 
 LLCDResult nd_hacdConvexDecomposition::executeStage( int stage )
 {
+	TRACE_FUNC( mTracer );
 	if ( stage < 0 || stage >= NUM_STAGES )
 		return LLCD_INVALID_STAGE;
 
@@ -132,6 +147,7 @@ LLCDResult nd_hacdConvexDecomposition::executeStage( int stage )
 	tHACD *pHACD = init( 1, MIN_NUMBER_OF_CLUSTERS, MAX_VERTICES_PER_HULL, CONNECT_DISTS[0], pC );
 
 	DecompData oRes = decompose( pHACD );
+	ndStructTracer::trace( oRes, mTracer );
 
 	delete pHACD;
 
@@ -142,6 +158,7 @@ LLCDResult nd_hacdConvexDecomposition::executeStage( int stage )
 
 int nd_hacdConvexDecomposition::getNumHullsFromStage( int stage )
 {
+	TRACE_FUNC( mTracer );
 	HACDDecoder *pC = mDecoders[ mCurrentDecoder ];
 
 	if ( !pC )
@@ -153,8 +170,9 @@ int nd_hacdConvexDecomposition::getNumHullsFromStage( int stage )
 	return pC->mStages[stage].mHulls.size();
 }
 
-DecompData toSingleHull( HACDDecoder *aDecoder, LLCDResult &aRes )
+DecompData toSingleHull( HACDDecoder *aDecoder, LLCDResult &aRes, ndConvexDecompositionTracer *aTracer )
 {
+	TRACE_FUNC( aTracer );
 	aRes = LLCD_REQUEST_OUT_OF_RANGE;
 
 	for ( int i = 0; i < TO_SINGLE_HULL_TRIES; ++i )
@@ -163,6 +181,8 @@ DecompData toSingleHull( HACDDecoder *aDecoder, LLCDResult &aRes )
 
 		DecompData oRes = decompose( pHACD );
 		delete pHACD;
+
+		ndStructTracer::trace( oRes, aTracer );
 
 		if ( oRes.mHulls.size() == 1 )
 		{
@@ -176,12 +196,15 @@ DecompData toSingleHull( HACDDecoder *aDecoder, LLCDResult &aRes )
 
 LLCDResult nd_hacdConvexDecomposition::getSingleHull( LLCDHull* hullOut )
 {
+	TRACE_FUNC( mTracer );
 	HACDDecoder *pC = mDecoders[ mCurrentDecoder ];
 
 	memset( hullOut, 0, sizeof( LLCDHull ) );
 
 	LLCDResult res;
-	DecompData oRes = ::toSingleHull( pC, res );
+
+	// Will already trace oRes
+	DecompData oRes = ::toSingleHull( pC, res, mTracer );
 
 	if ( LLCD_OK != res || oRes.mHulls.size() != 1 )
 		return res;
@@ -194,6 +217,7 @@ LLCDResult nd_hacdConvexDecomposition::getSingleHull( LLCDHull* hullOut )
 
 LLCDResult nd_hacdConvexDecomposition::getHullFromStage( int stage, int hull, LLCDHull* hullOut )
 {
+	TRACE_FUNC( mTracer );
 	HACDDecoder *pC = mDecoders[ mCurrentDecoder ];
 
 	memset( hullOut, 0, sizeof( LLCDHull ) );
@@ -207,11 +231,14 @@ LLCDResult nd_hacdConvexDecomposition::getHullFromStage( int stage, int hull, LL
 		return LLCD_REQUEST_OUT_OF_RANGE;
 
 	oData.mHulls[ hull ].toLLHull( hullOut );
+	ndStructTracer::trace( hullOut, mTracer );
+
 	return LLCD_OK;
 }
 
 LLCDResult nd_hacdConvexDecomposition::getMeshFromStage( int stage, int hull, LLCDMeshData* meshDataOut )
 {
+	TRACE_FUNC( mTracer );
 	HACDDecoder *pC = mDecoders[ mCurrentDecoder ];
 
 	memset( meshDataOut, 0, sizeof( LLCDHull ) );
@@ -225,17 +252,20 @@ LLCDResult nd_hacdConvexDecomposition::getMeshFromStage( int stage, int hull, LL
 		return LLCD_REQUEST_OUT_OF_RANGE;
 
 	oData.mHulls[ hull ].toLLMesh( meshDataOut );
+	ndStructTracer::trace( meshDataOut, true, mTracer );
 	return LLCD_OK;
 }
 
 LLCDResult	nd_hacdConvexDecomposition::getMeshFromHull( LLCDHull* hullIn, LLCDMeshData* meshOut )
 {
+	TRACE_FUNC( mTracer );
 	memset( meshOut, 0, sizeof( LLCDMeshData ) );
 	return LLCD_NOT_IMPLEMENTED;
 }
 
 LLCDResult nd_hacdConvexDecomposition::generateSingleHullMeshFromMesh( LLCDMeshData* meshIn, LLCDMeshData* meshOut )
 {
+	TRACE_FUNC( mTracer );
 	memset( meshOut, 0, sizeof( LLCDMeshData ) );
 	mSingleHullMeshFromMesh->clear();
 	LLCDResult res = ::setMeshData( meshIn, meshIn->mNumVertices > 3, mSingleHullMeshFromMesh );
@@ -243,7 +273,8 @@ LLCDResult nd_hacdConvexDecomposition::generateSingleHullMeshFromMesh( LLCDMeshD
 	if ( LLCD_OK != res )
 		return res;
 
-	DecompData oRes = ::toSingleHull( mSingleHullMeshFromMesh, res );
+	// Will already trace oRes
+	DecompData oRes = ::toSingleHull( mSingleHullMeshFromMesh, res, mTracer );
 
 	if ( LLCD_OK != res || oRes.mHulls.size() != 1 )
 		return res;
@@ -256,6 +287,7 @@ LLCDResult nd_hacdConvexDecomposition::generateSingleHullMeshFromMesh( LLCDMeshD
 
 void nd_hacdConvexDecomposition::loadMeshData( const char* fileIn, LLCDMeshData** meshDataOut )
 {
+	TRACE_FUNC( mTracer );
 	static LLCDMeshData meshData;
 	memset( &meshData, 0, sizeof( LLCDMeshData ) );
 	*meshDataOut = &meshData;
@@ -263,6 +295,7 @@ void nd_hacdConvexDecomposition::loadMeshData( const char* fileIn, LLCDMeshData*
 
 int nd_hacdConvexDecomposition::getParameters( const LLCDParam** paramsOut )
 {
+	TRACE_FUNC( mTracer );
 	static LLCDParam oParams[1];
 	memset( &oParams[0], 0, sizeof( LLCDParam ) );
 	oParams[0].mName = "nd_AlwaysNeedTriangles";
@@ -276,6 +309,7 @@ int nd_hacdConvexDecomposition::getParameters( const LLCDParam** paramsOut )
 
 int nd_hacdConvexDecomposition::getStages( const LLCDStageData** stagesOut )
 {
+	TRACE_FUNC( mTracer );
 	static LLCDStageData oStages[2];
 
 	oStages[0].mName = "Decompose";
@@ -283,4 +317,15 @@ int nd_hacdConvexDecomposition::getStages( const LLCDStageData** stagesOut )
 
 	*stagesOut = oStages;
 	return 1;
+}
+
+void nd_hacdConvexDecomposition::setTracer( ndConvexDecompositionTracer * aTracer)
+{
+	if( mTracer )
+		mTracer->release();
+
+	mTracer = aTracer;
+
+	if( mTracer )
+		mTracer->addref();
 }

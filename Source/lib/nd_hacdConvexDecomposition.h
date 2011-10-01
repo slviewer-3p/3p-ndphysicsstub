@@ -25,12 +25,14 @@
 
 struct HACDDecoder;
 
-class nd_hacdConvexDecomposition : public LLConvexDecomposition
+class nd_hacdConvexDecomposition : public LLConvexDecomposition, public ndConvexDecompositionTracable
 {
 	int mNextId;
 	int mCurrentDecoder;
 	std::map< int, HACDDecoder * > mDecoders;
 	HACDDecoder *mSingleHullMeshFromMesh;
+
+	ndConvexDecompositionTracer *mTracer;
 
 public:
 	virtual ~nd_hacdConvexDecomposition();
@@ -78,6 +80,8 @@ public:
 
 	/// Debug
 	void loadMeshData( const char* fileIn, LLCDMeshData** meshDataOut );
+
+	virtual void setTracer( ndConvexDecompositionTracer *);
 
 private:
 	nd_hacdConvexDecomposition();
