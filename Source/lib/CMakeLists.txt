@@ -4,7 +4,6 @@ if( MSVC )
    add_definitions(-D_SECURE_STL=0 -D_HAS_ITERATOR_DEBUGGING=0)
 endif( MSVC )
 
-
 set (SOURCE_FILES LLConvexDecomposition.cpp nd_hacdConvexDecomposition.cpp nd_hacdStructs.cpp nd_hacdUtils.cpp )
 file(GLOB HEADER_FILES *.h)
 
@@ -12,3 +11,4 @@ add_library( nd_hacdConvexDecomposition STATIC ${SOURCE_FILES} ${HEADER_FILES})
 
 install( TARGETS nd_hacdConvexDecomposition DESTINATION lib )
 install( FILES LLConvexDecomposition.h RENAME llconvexdecomposition.h DESTINATION include )
+install( FILES ndConvexDecomposition.h DESTINATION include )
