@@ -27,6 +27,13 @@
 #include "nd_EnterExitTracer.h"
 #include "nd_StructTracer.h"
 
+LLCDStageData nd_hacdConvexDecomposition::mStages[1];
+
+LLCDParam nd_hacdConvexDecomposition::mParams[4];
+LLCDParam::LLCDEnumItem nd_hacdConvexDecomposition::mMethods[1];
+LLCDParam::LLCDEnumItem nd_hacdConvexDecomposition::mQuality[1];
+LLCDParam::LLCDEnumItem nd_hacdConvexDecomposition::mSimplify[1];
+
 LLConvexDecomposition* nd_hacdConvexDecomposition::getInstance()
 {
 	static nd_hacdConvexDecomposition sImpl;
@@ -49,6 +56,47 @@ nd_hacdConvexDecomposition::~nd_hacdConvexDecomposition()
 
 LLCDResult nd_hacdConvexDecomposition::initSystem()
 {
+	memset( &mStages[0], 0, sizeof( mStages ) );
+	memset( &mParams[0], 0, sizeof( mParams ) );
+	memset( &mMethods[0], 0, sizeof( mMethods ) );
+	memset( &mQuality[0], 0, sizeof( mQuality ) );
+	memset( &mSimplify[0], 0, sizeof( mSimplify ) );
+
+	mStages[0].mName = "Decompose";
+	mStages[0].mDescription = NULL;
+
+	mMethods[0].mName = "Default";
+	mMethods[0].mValue = 0;
+
+	mQuality[0].mName = "Default";
+	mQuality[0].mValue = 0;
+
+	mSimplify[0].mName = "None";
+	mSimplify[0].mValue = 0;
+
+	mParams[0].mName = "nd_AlwaysNeedTriangles";
+	mParams[0].mDescription = 0;
+	mParams[0].mType = LLCDParam::LLCD_BOOLEAN;
+	mParams[0].mDefault.mBool = true;
+
+	mParams[1].mName = "Method";
+	mParams[1].mType = LLCDParam::LLCD_ENUM;
+	mParams[1].mDetails.mEnumValues.mNumEnums = sizeof(mMethods)/sizeof(LLCDParam::LLCDEnumItem);
+	mParams[1].mDetails.mEnumValues.mEnumsArray = mMethods;
+	mParams[1].mDefault.mIntOrEnumValue = 0;
+
+	mParams[2].mName = "Decompose Quality";
+	mParams[2].mType = LLCDParam::LLCD_ENUM;
+	mParams[2].mDetails.mEnumValues.mNumEnums = sizeof(mQuality)/sizeof(LLCDParam::LLCDEnumItem);
+	mParams[2].mDetails.mEnumValues.mEnumsArray = mQuality;
+	mParams[2].mDefault.mIntOrEnumValue = 0;
+
+	mParams[3].mName = "Simplify Method";
+	mParams[3].mType = LLCDParam::LLCD_ENUM;
+	mParams[3].mDetails.mEnumValues.mNumEnums = sizeof(mSimplify)/sizeof(LLCDParam::LLCDEnumItem);
+	mParams[3].mDetails.mEnumValues.mEnumsArray = mSimplify;
+	mParams[3].mDefault.mIntOrEnumValue = 0;
+
 	return LLCD_OK;
 }
 
@@ -119,14 +167,10 @@ LLCDResult nd_hacdConvexDecomposition::registerCallback( int stage, llcdCallback
 {
 	TRACE_FUNC( mTracer );
 	if( mDecoders.end() == mDecoders.find( mCurrentDecoder ) )
-	{
-		std::cerr << "registerCallback: no decoder active!" << std::endl;
-		return LLCD_OK;
-	}
+		return LLCD_STAGE_NOT_READY;
 
 	HACDDecoder *pC = mDecoders[ mCurrentDecoder ];
 	pC->mCallback = callback;
-	
 
 	return LLCD_OK;
 }
@@ -319,58 +363,16 @@ void nd_hacdConvexDecomposition::loadMeshData( const char* fileIn, LLCDMeshData*
 int nd_hacdConvexDecomposition::getParameters( const LLCDParam** paramsOut )
 {
 	TRACE_FUNC( mTracer );
-	static LLCDParam oParams[4];
-	static LLCDParam::LLCDEnumItem oMethods[1];
-	static LLCDParam::LLCDEnumItem oQuality[1];
-	static LLCDParam::LLCDEnumItem oSimplify[1];
-
-	oMethods[0].mName = "Default";
-	oMethods[0].mValue = 0;
-
-	oQuality[0].mName = "Default";
-	oQuality[0].mValue = 0;
-
-	oSimplify[0].mName = "None";
-	oSimplify[0].mValue = 0;
-
-	memset( &oParams[0], 0, sizeof( LLCDParam )*4 );
-	oParams[0].mName = "nd_AlwaysNeedTriangles";
-	oParams[0].mDescription = 0;
-	oParams[0].mType = LLCDParam::LLCD_BOOLEAN;
-	oParams[0].mDefault.mBool = true;
-
-	oParams[1].mName = "Method";
-	oParams[1].mType = LLCDParam::LLCD_ENUM;
-	oParams[1].mDetails.mEnumValues.mNumEnums = 1;
-	oParams[1].mDetails.mEnumValues.mEnumsArray = oMethods;
-	oParams[1].mDefault.mIntOrEnumValue = 0;
-
-	oParams[2].mName = "Decompose Quality";
-	oParams[2].mType = LLCDParam::LLCD_ENUM;
-	oParams[2].mDetails.mEnumValues.mNumEnums = 1;
-	oParams[2].mDetails.mEnumValues.mEnumsArray = oQuality;
-	oParams[2].mDefault.mIntOrEnumValue = 0;
-
-	oParams[3].mName = "Simplify Method";
-	oParams[3].mType = LLCDParam::LLCD_ENUM;
-	oParams[3].mDetails.mEnumValues.mNumEnums = 1;
-	oParams[3].mDetails.mEnumValues.mEnumsArray = oSimplify;
-	oParams[3].mDefault.mIntOrEnumValue = 0;
-
-	*paramsOut = oParams;
-	return 4;
+	*paramsOut = mParams;
+	return sizeof(mParams)/sizeof(LLCDParam);
 }
 
 int nd_hacdConvexDecomposition::getStages( const LLCDStageData** stagesOut )
 {
 	TRACE_FUNC( mTracer );
-	static LLCDStageData oStages[2];
 
-	oStages[0].mName = "Decompose";
-	oStages[0].mDescription = NULL;
-
-	*stagesOut = oStages;
-	return 1;
+	*stagesOut = mStages;
+	return sizeof(mStages)/sizeof(LLCDStageData);
 }
 
 void nd_hacdConvexDecomposition::setTracer( ndConvexDecompositionTracer * aTracer)

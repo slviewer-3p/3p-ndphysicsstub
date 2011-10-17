@@ -38,6 +38,13 @@ class nd_hacdConvexDecomposition : public LLConvexDecomposition, public ndConvex
 
 	ndConvexDecompositionTracer *mTracer;
 
+	static LLCDStageData mStages[1];
+
+	static LLCDParam mParams[4];
+	static LLCDParam::LLCDEnumItem mMethods[1];
+	static LLCDParam::LLCDEnumItem mQuality[1];
+	static LLCDParam::LLCDEnumItem mSimplify[1];
+
 public:
 	virtual ~nd_hacdConvexDecomposition();
 
