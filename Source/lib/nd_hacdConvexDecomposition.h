@@ -22,6 +22,7 @@
 #include "LLConvexDecomposition.h"
 
 #include <map>
+#include <vector>
 
 struct HACDDecoder;
 
@@ -31,6 +32,9 @@ class nd_hacdConvexDecomposition : public LLConvexDecomposition, public ndConvex
 	int mCurrentDecoder;
 	std::map< int, HACDDecoder * > mDecoders;
 	HACDDecoder *mSingleHullMeshFromMesh;
+
+	std::vector< float > mMeshToHullVertices;
+	std::vector< int > mMeshToHullTriangles;
 
 	ndConvexDecompositionTracer *mTracer;
 

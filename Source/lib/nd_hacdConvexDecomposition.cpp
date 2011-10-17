@@ -256,11 +256,34 @@ LLCDResult nd_hacdConvexDecomposition::getMeshFromStage( int stage, int hull, LL
 	return LLCD_OK;
 }
 
-LLCDResult	nd_hacdConvexDecomposition::getMeshFromHull( LLCDHull* hullIn, LLCDMeshData* meshOut )
+LLCDResult nd_hacdConvexDecomposition::getMeshFromHull( LLCDHull* hullIn, LLCDMeshData* meshOut )
 {
 	TRACE_FUNC( mTracer );
 	memset( meshOut, 0, sizeof( LLCDMeshData ) );
-	return LLCD_NOT_IMPLEMENTED;
+
+	mMeshToHullVertices.clear();
+	mMeshToHullTriangles.clear();
+
+	if( !hullIn || !hullIn->mVertexBase || !meshOut )
+		return LLCD_NULL_PTR;
+	if( hullIn->mVertexStrideBytes < 3*sizeof(float) || hullIn->mNumVertices < 3 )
+		return LLCD_INVALID_HULL_DATA;
+
+	LLCDResult oRet = convertHullToMesh( hullIn, mMeshToHullVertices, mMeshToHullTriangles );
+
+	if( LLCD_OK != oRet )
+		return oRet;
+
+	meshOut->mVertexStrideBytes = sizeof( float )*3;
+	meshOut->mNumVertices = mMeshToHullVertices.size()/3;
+	meshOut->mVertexBase = &mMeshToHullVertices[0];
+
+	meshOut->mIndexType = LLCDMeshData::INT_32;
+	meshOut->mIndexStrideBytes = sizeof( hacdUINT32 ) * 3;
+	meshOut->mNumTriangles = mMeshToHullTriangles.size()/3;
+	meshOut->mIndexBase = &mMeshToHullTriangles[0];
+
+	return LLCD_OK;
 }
 
 LLCDResult nd_hacdConvexDecomposition::generateSingleHullMeshFromMesh( LLCDMeshData* meshIn, LLCDMeshData* meshOut )

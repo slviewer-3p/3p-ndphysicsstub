@@ -30,7 +30,7 @@ typedef HACD::HACD tHACD;
 typedef HACD::Vec3< double > tVecDbl;
 typedef HACD::Vec3< long > tVecLong;
 
-typedef tVecLong ( *fFromIXX )( void *&, int );
+typedef tVecLong ( *fFromIXX )( void const *&, int );
 
 const int MAX_VERTICES_PER_HULL     = 256;    // see http://wiki.secondlife.com/wiki/Mesh/Mesh_physics
 const int MIN_NUMBER_OF_CLUSTERS    = 1;

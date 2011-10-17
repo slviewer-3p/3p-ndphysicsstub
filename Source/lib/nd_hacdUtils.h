@@ -29,5 +29,6 @@ tVecLong fromI16( void *& pPtr, int aStride );
 tVecLong fromI32( void *& pPtr, int aStride );
 
 LLCDResult setMeshData( const LLCDMeshData* data, bool vertex_based, HACDDecoder *aDec );
+LLCDResult convertHullToMesh( const LLCDHull* aHull, std::vector< float > &aVerticesOut, std::vector< int > &aTrianglesOut );
 
 #endif

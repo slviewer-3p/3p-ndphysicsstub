@@ -69,18 +69,18 @@ DecompData decompose( tHACD *aHACD )
 	return oRet;
 }
 
-tVecLong fromI16( void *& pPtr, int aStride )
+tVecLong fromI16( void const *& pPtr, int aStride )
 {
-	hacdUINT16 *pVal = reinterpret_cast< hacdUINT16 * >( pPtr );
+	hacdUINT16 const *pVal = reinterpret_cast< hacdUINT16 const * >( pPtr );
 	tVecLong oRet( pVal[0], pVal[1], pVal[2] );
 	pVal += aStride / 2;
 	pPtr = pVal;
 	return oRet;
 }
 
-tVecLong fromI32( void *& pPtr, int aStride )
+tVecLong fromI32( void const *& pPtr, int aStride )
 {
-	hacdUINT32 *pVal = reinterpret_cast< hacdUINT32 * >( pPtr );
+	hacdUINT32 const *pVal = reinterpret_cast< hacdUINT32 const * >( pPtr );
 	tVecLong oRet( pVal[0], pVal[1], pVal[2] );
 	pVal += aStride / 4;
 	pPtr = pVal;
@@ -97,7 +97,7 @@ LLCDResult setMeshData( const LLCDMeshData* data, bool vertex_based, HACDDecoder
 
 	aDec->clear();
 	int nCount = data->mNumVertices;
-	float* pVertex = const_cast<float*>( data->mVertexBase );
+	float const* pVertex = data->mVertexBase;
 	int nStride = data->mVertexStrideBytes / sizeof( float );
 
 	for ( int i = 0; i < nCount; ++i )
@@ -112,7 +112,7 @@ LLCDResult setMeshData( const LLCDMeshData* data, bool vertex_based, HACDDecoder
 		fFromIXX pFunc = 0;
 		nCount = data->mNumTriangles;
 		nStride = data->mIndexStrideBytes;
-		void *pData = const_cast<void*>( data->mIndexBase );
+		void const *pData = data->mIndexBase;
 
 		if ( data->mIndexType == LLCDMeshData::INT_16 )
 			pFunc = fromI16;
@@ -124,6 +124,56 @@ LLCDResult setMeshData( const LLCDMeshData* data, bool vertex_based, HACDDecoder
 			tVecLong oVal( ( *pFunc )( pData, nStride ) );
 			aDec->mTriangles.push_back( oVal );
 		}
+	}
+
+	return LLCD_OK;
+}
+
+LLCDResult convertHullToMesh( const LLCDHull* aHull, std::vector< float > &aVerticesOut, std::vector< int > &aTrianglesOut )
+{
+	if( !aHull || !aHull->mVertexBase )
+		return LLCD_NULL_PTR;
+	if( aHull->mVertexStrideBytes < 3*sizeof(float) || aHull->mNumVertices < 3 )
+		return LLCD_INVALID_HULL_DATA;
+
+	HACD::ICHull oHull;
+
+	int nCount = aHull->mNumVertices;
+	float const *pVertex = aHull->mVertexBase;
+	int nStride = aHull->mVertexStrideBytes / sizeof( float );
+
+	for ( int i = 0; i < nCount; ++i )
+	{
+		oHull.AddPoint( tVecDbl( pVertex[0], pVertex[1], pVertex[2] ) );
+		pVertex += nStride;
+	}
+
+	HACD::ICHullError eErr = oHull.Process();
+	if( HACD::ICHullErrorOK != eErr )
+		return LLCD_INVALID_HULL_DATA;
+
+	HACD::TMMesh &oMesh = oHull.GetMesh();
+
+	std::vector< tVecDbl > vPoints;
+	std::vector< tVecLong > vTriangles;
+
+	vPoints.resize( oMesh.GetNVertices() );
+	vTriangles.resize( oMesh.GetNTriangles() );
+
+	oMesh.GetIFS( &vPoints[0], &vTriangles[0] );
+
+	for( size_t i = 0; i < vPoints.size(); ++i )
+	{
+		aVerticesOut.push_back( static_cast<float>( vPoints[i].X() ) );
+		aVerticesOut.push_back( static_cast<float>( vPoints[i].Y() ) );
+		aVerticesOut.push_back( static_cast<float>( vPoints[i].Z() ) );
+	}
+
+	for( size_t i = 0; i < vTriangles.size(); ++i )
+	{
+		aTrianglesOut.push_back( vTriangles[i].X() );
+		aTrianglesOut.push_back( vTriangles[i].Y() );
+		aTrianglesOut.push_back( vTriangles[i].Z() );
 	}
 
 	return LLCD_OK;
