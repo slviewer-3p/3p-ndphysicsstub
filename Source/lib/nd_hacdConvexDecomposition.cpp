@@ -319,15 +319,46 @@ void nd_hacdConvexDecomposition::loadMeshData( const char* fileIn, LLCDMeshData*
 int nd_hacdConvexDecomposition::getParameters( const LLCDParam** paramsOut )
 {
 	TRACE_FUNC( mTracer );
-	static LLCDParam oParams[1];
-	memset( &oParams[0], 0, sizeof( LLCDParam ) );
+	static LLCDParam oParams[4];
+	static LLCDParam::LLCDEnumItem oMethods[1];
+	static LLCDParam::LLCDEnumItem oQuality[1];
+	static LLCDParam::LLCDEnumItem oSimplify[1];
+
+	oMethods[0].mName = "Default";
+	oMethods[0].mValue = 0;
+
+	oQuality[0].mName = "Default";
+	oQuality[0].mValue = 0;
+
+	oSimplify[0].mName = "None";
+	oSimplify[0].mValue = 0;
+
+	memset( &oParams[0], 0, sizeof( LLCDParam )*4 );
 	oParams[0].mName = "nd_AlwaysNeedTriangles";
 	oParams[0].mDescription = 0;
 	oParams[0].mType = LLCDParam::LLCD_BOOLEAN;
 	oParams[0].mDefault.mBool = true;
 
+	oParams[1].mName = "Method";
+	oParams[1].mType = LLCDParam::LLCD_ENUM;
+	oParams[1].mDetails.mEnumValues.mNumEnums = 1;
+	oParams[1].mDetails.mEnumValues.mEnumsArray = oMethods;
+	oParams[1].mDefault.mIntOrEnumValue = 0;
+
+	oParams[2].mName = "Decompose Quality";
+	oParams[2].mType = LLCDParam::LLCD_ENUM;
+	oParams[2].mDetails.mEnumValues.mNumEnums = 1;
+	oParams[2].mDetails.mEnumValues.mEnumsArray = oQuality;
+	oParams[2].mDefault.mIntOrEnumValue = 0;
+
+	oParams[3].mName = "Simplify Method";
+	oParams[3].mType = LLCDParam::LLCD_ENUM;
+	oParams[3].mDetails.mEnumValues.mNumEnums = 1;
+	oParams[3].mDetails.mEnumValues.mEnumsArray = oSimplify;
+	oParams[3].mDefault.mIntOrEnumValue = 0;
+
 	*paramsOut = oParams;
-	return 1;
+	return 4;
 }
 
 int nd_hacdConvexDecomposition::getStages( const LLCDStageData** stagesOut )
