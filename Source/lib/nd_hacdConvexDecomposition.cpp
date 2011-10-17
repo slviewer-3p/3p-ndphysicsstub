@@ -139,19 +139,19 @@ void nd_hacdConvexDecomposition::bindDecomposition( int decomp )
 LLCDResult nd_hacdConvexDecomposition::setParam( const char* name, float val )
 {
 	TRACE_FUNC( mTracer );
-	return LLCD_NOT_IMPLEMENTED;
+	return LLCD_OK;
 }
 
 LLCDResult nd_hacdConvexDecomposition::setParam( const char* name, bool val )
 {
 	TRACE_FUNC( mTracer );
-	return LLCD_NOT_IMPLEMENTED;
+	return LLCD_OK;
 }
 
 LLCDResult nd_hacdConvexDecomposition::setParam( const char* name, int val )
 {
 	TRACE_FUNC( mTracer );
-	return LLCD_NOT_IMPLEMENTED;
+	return LLCD_OK;
 }
 
 LLCDResult nd_hacdConvexDecomposition::setMeshData( const LLCDMeshData* data, bool vertex_based )
