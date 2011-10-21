@@ -143,6 +143,9 @@ namespace ndStructTracer
 
 	void trace( LLCDMeshData const *aData, bool aVertexBased, ndConvexDecompositionTracer *aTracer )
 	{
+		if( !doTrace( aTracer ) )
+			return;
+
 		aTracer->startTraceData("LLCDMeshData");
 
 		string strVBased("true");
