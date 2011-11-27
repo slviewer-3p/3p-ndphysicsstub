@@ -278,10 +278,3 @@ namespace HACD
 		return false;
 	}
 }
-
-
-
-
-
-
-
