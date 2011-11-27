@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 2.6.4)
 
 if( MSVC )
    add_definitions(-D_SECURE_STL=0 -D_HAS_ITERATOR_DEBUGGING=0)
