@@ -22,6 +22,7 @@ All rights reserved.
 #include <hacdVersion.h>
 #include <hacdVector.h>
 #include <hacdSArray.h>
+#include <hacdHACD.h>
 
 namespace HACD
 {
@@ -55,7 +56,7 @@ namespace HACD
 		inline	friend bool						operator<(const MDEdgePriorityQueue & lhs, const MDEdgePriorityQueue & rhs) { return (lhs.m_qem > rhs.m_qem);}
 		inline	friend bool						operator>(const MDEdgePriorityQueue & lhs, const MDEdgePriorityQueue & rhs) { return (lhs.m_qem < rhs.m_qem);}
 	};
-	typedef void (*CallBackFunction)(const char *, double, double, size_t);
+
 	class MeshDecimator
 	{
 	public:

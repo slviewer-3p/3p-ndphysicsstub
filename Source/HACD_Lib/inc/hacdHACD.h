@@ -72,7 +72,13 @@ namespace HACD
 													{
 														return lhs.m_priority>rhs.m_priority;
 													}
-    typedef void (*CallBackFunction)(const char *, double, double, size_t);
+    class ICallback
+    {
+    public:
+		virtual void operator()( char const *aMsg, double aProgress, double aConcavity, size_t aVertices) = 0;
+    };
+	
+	typedef ICallback* CallBackFunction;
 
 	//! Provides an implementation of the Hierarchical Approximate Convex Decomposition (HACD) technique described in "A Simple and Efficient Approach for 3D Mesh Approximate Convex Decomposition" Game Programming Gems 8 - Chapter 2.8, p.202. A short version of the chapter was published in ICIP09 and is available at ftp://ftp.elet.polimi.it/users/Stefano.Tubaro/ICIP_USB_Proceedings_v2/pdfs/0003501.pdf
     class HACD
