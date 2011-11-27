@@ -20,7 +20,7 @@
 
 tHACD* init( int nConcavity, int nClusters, int nMaxVerticesPerHull, double dMaxConnectDist, HACDDecoder *aData )
 {
-	tHACD *pDec = new tHACD();
+	tHACD *pDec = HACD::CreateHACD(0);
 	pDec->SetPoints( &aData->mVertices[0] );
 	pDec->SetNPoints( aData->mVertices.size() );
 
@@ -34,13 +34,12 @@ tHACD* init( int nConcavity, int nClusters, int nMaxVerticesPerHull, double dMax
 	pDec->SetVolumeWeight( 0 );
 	pDec->SetNClusters( nClusters );
 	pDec->SetAddExtraDistPoints( true );
-	pDec->SetAddNeighboursDistPoints( false );
 	pDec->SetAddFacesPoints( true );
 	pDec->SetNVerticesPerCH( nMaxVerticesPerHull );
 	pDec->SetConcavity( nConcavity );
 	pDec->SetConnectDist( dMaxConnectDist );
 
-	pDec->SetCallBack( aData );
+	//	pDec->SetCallBack( aData );
 
 	return pDec;
 }
@@ -142,13 +141,17 @@ LLCDResult convertHullToMesh( const LLCDHull* aHull, std::vector< float > &aVert
 	float const *pVertex = aHull->mVertexBase;
 	int nStride = aHull->mVertexStrideBytes / sizeof( float );
 
+	std::vector< tVecDbl > vcPoints;
+
 	for ( int i = 0; i < nCount; ++i )
 	{
-		oHull.AddPoint( tVecDbl( pVertex[0], pVertex[1], pVertex[2] ) );
+		vcPoints.push_back( tVecDbl( pVertex[0], pVertex[1], pVertex[2] ) ); 
 		pVertex += nStride;
 	}
 
-	HACD::ICHullError eErr = oHull.Process();
+	oHull.AddPoints( &vcPoints[0], vcPoints.size() );
+
+	HACD::ICHullError eErr = oHull.Process( MAX_VERTICES_PER_HULL );
 	if( HACD::ICHullErrorOK != eErr )
 		return LLCD_INVALID_HULL_DATA;
 

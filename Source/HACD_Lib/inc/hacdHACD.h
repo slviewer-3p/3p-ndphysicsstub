@@ -41,6 +41,7 @@ namespace HACD
 	};
 	
 	//! priority queque element
+	class HACD;
     class GraphEdgePriorityQueue
     {
 		public:
@@ -65,25 +66,24 @@ namespace HACD
     };
     inline bool										operator<(const GraphEdgePriorityQueue & lhs, const GraphEdgePriorityQueue & rhs)
 													{
-														return lhs.m_priority<rhs.m_priority;
+														return (lhs.m_priority<rhs.m_priority);
 													}
     inline bool										operator>(const GraphEdgePriorityQueue & lhs, const GraphEdgePriorityQueue & rhs)
 													{
 														return lhs.m_priority>rhs.m_priority;
 													}
-    class ICallback
-    {
-    public:
-       virtual void operator()( char const *aMsg, double aProgress, double aConcavity, size_t aVertices) = 0;
-    };
-
-	typedef ICallback* CallBackFunction;
+    typedef void (*CallBackFunction)(const char *, double, double, size_t);
 
 	//! Provides an implementation of the Hierarchical Approximate Convex Decomposition (HACD) technique described in "A Simple and Efficient Approach for 3D Mesh Approximate Convex Decomposition" Game Programming Gems 8 - Chapter 2.8, p.202. A short version of the chapter was published in ICIP09 and is available at ftp://ftp.elet.polimi.it/users/Stefano.Tubaro/ICIP_USB_Proceedings_v2/pdfs/0003501.pdf
     class HACD
 	{            
     public:
-
+		//! Gives the targeted number of triangles of the decimated mesh
+		//! @return targeted number of triangles of the decimated mesh
+		size_t										GetTargetNTrianglesDecimatedMesh() const { return m_targetNTrianglesDecimatedMesh;}
+        //! Sets the targeted number of triangles of the decimated mesh
+		//! @param targeted number of triangles of the decimated mesh
+		void										SetNTargetTrianglesDecimatedMesh(size_t  targetNTrianglesDecimatedMesh) { m_targetNTrianglesDecimatedMesh = targetNTrianglesDecimatedMesh;}
 		//! Gives the triangles partitionas an array of size m_nTriangles where the i-th element specifies the cluster to which belong the i-th triangle
 		//! @return triangles partition
 		const long * const							GetPartition() const { return m_partition;}
@@ -93,6 +93,12 @@ namespace HACD
 		//! Gives the scale factor
 		//! @return scale factor
 		const double								GetScaleFactor() const { return m_scale;}
+        //! Sets the threshold to detect small clusters. The threshold is expressed as a percentage of the total mesh surface (default 0.25%)
+		//! @param smallClusterThreshold threshold to detect small clusters
+		void										SetSmallClusterThreshold(double  smallClusterThreshold) { m_smallClusterThreshold = smallClusterThreshold;}
+		//! Gives the threshold to detect small clusters. The threshold is expressed as a percentage of the total mesh surface (default 0.25%)
+		//! @return threshold to detect small clusters
+		const double								GetSmallClusterThreshold() const { return m_smallClusterThreshold;}
 		//! Sets the call-back function
 		//! @param callBack pointer to the call-back function
 		void										SetCallBack(CallBackFunction  callBack) { m_callBack = callBack;}
@@ -112,18 +118,24 @@ namespace HACD
 		//! Specifies wheter extra points should be added when computing the concavity
 		//! @return true = extra points should be added
 		const bool									GetAddExtraDistPoints() const { return m_addExtraDistPoints;}
-        //! Specifies whether extra points should be added when computing the concavity
-		//! @param addExteraDistPoints true = extra points should be added
-		void										SetAddNeighboursDistPoints(bool  addNeighboursDistPoints) { m_addNeighboursDistPoints = addNeighboursDistPoints;}
-		//! Specifies wheter extra points should be added when computing the concavity
-		//! @return true = extra points should be added
-		const bool									GetAddNeighboursDistPoints() const { return m_addNeighboursDistPoints;}
         //! Sets the points of the input mesh (Remark: the input points will be scaled and shifted. Use DenormalizeData() to invert those operations)
 		//! @param points pointer to the input points
 		void										SetPoints(Vec3<Real>  * points) { m_points = points;}
 		//! Gives the points of the input mesh (Remark: the input points will be scaled and shifted. Use DenormalizeData() to invert those operations)
 		//! @return pointer to the input points 
 		const Vec3<Real> *                          GetPoints() const { return m_points;}
+		//! Gives the points of the decimated mesh
+		//! @return pointer to the decimated mesh points 
+		const Vec3<Real> *                          GetDecimatedPoints() const { return m_pointsDecimated;}
+		//! Gives the triangles in the decimated mesh 
+		//! @return pointer to the decimated mesh triangles 
+		const Vec3<long>   *			            GetDecimatedTriangles() const { return m_trianglesDecimated;}        
+		//! Gives the number of points in the decimated mesh.
+		//! @return number of points the decimated mesh mesh
+		const size_t								GetNDecimatedPoints() const { return m_nPointsDecimated;}
+		//! Gives the number of triangles in the decimated mesh.
+		//! @return number of triangles the decimated mesh
+		const size_t								GetNDecimatedTriangles() const { return m_nTrianglesDecimated;}
 		//! Sets the triangles of the input mesh.
 		//! @param triangles points pointer to the input points
 		void										SetTriangles(Vec3<long>  * triangles) { m_triangles = triangles;}
@@ -206,12 +218,13 @@ namespace HACD
 		void										NormalizeData();
 		//! Inverse the operations applied by NormalizeData().
 		void										DenormalizeData();
-        //! Constructor.
-													HACD(void);
 		//! Destructor.
 													~HACD(void);
 
 	private:
+        //! Constructor.
+													HACD(HeapManager * heapManager = 0);
+
 		//! Gives the edge index.
 		//! @param a first vertex id
 		//! @param b second vertex id
@@ -252,12 +265,17 @@ namespace HACD
 		void										Simplify();
 
 	private:
-		double										m_scale;					//>! scale factor used for NormalizeData() and DenormalizeData()
+        Vec3<long> *								m_trianglesDecimated;		//>! pointer the triangles array
+        Vec3<Real> *                                m_pointsDecimated;			//>! pointer the points array
         Vec3<long> *								m_triangles;				//>! pointer the triangles array
         Vec3<Real> *                                m_points;					//>! pointer the points array
         Vec3<Real> *                                m_facePoints;               //>! pointer to the faces points array
         Vec3<Real> *                                m_faceNormals;              //>! pointer to the faces normals array
         Vec3<Real> *                                m_normals;					//>! pointer the normals array
+        Vec3<Real> *                                m_extraDistPoints;          //>! pointer to the faces points array
+        Vec3<Real> *                                m_extraDistNormals;         //>! pointer to the faces normals array
+        size_t										m_nTrianglesDecimated;		//>! number of triangles in the original mesh
+        size_t										m_nPointsDecimated;			//>! number of vertices in the original mesh
         size_t										m_nTriangles;				//>! number of triangles in the original mesh
         size_t										m_nPoints;					//>! number of vertices in the original mesh
         size_t										m_nClusters;				//>! number of clusters
@@ -266,7 +284,12 @@ namespace HACD
         double										m_concavity;				//>! maximum concavity
 		double										m_alpha;					//>! compacity weigth
         double                                      m_beta;                     //>! volume weigth
+		double										m_gamma;					//>! computation cost
         double										m_diag;						//>! length of the BB diagonal
+		double										m_scale;					//>! scale factor used for NormalizeData() and DenormalizeData()
+		double										m_flatRegionThreshold;		//>! threshhold to control the contirbution of flat regions concavity (default 1% of m_scale)
+		double										m_smallClusterThreshold;	//>! threshhold to detect small clusters (default 0.25% of the total mesh surface)
+		double										m_area;						//>! surface area
 		Vec3<Real>                                  m_barycenter;				//>! barycenter of the mesh
         std::vector< long >                         m_cVertices;				//>! array of vertices each belonging to a different cluster
         ICHull *                                    m_convexHulls;				//>! convex-hulls associated with the final HACD clusters
@@ -278,10 +301,21 @@ namespace HACD
 													HACD(const HACD & rhs);
 		CallBackFunction							m_callBack;					//>! call-back function
 		long *										m_partition;				//>! array of size m_nTriangles where the i-th element specifies the cluster to which belong the i-th triangle
+		size_t										m_targetNTrianglesDecimatedMesh; //>! specifies the target number of triangles in the decimated mesh. If set to 0 no decimation is applied.
+        HeapManager *                               m_heapManager;              //>! Heap Manager
         bool                                        m_addFacesPoints;           //>! specifies whether to add faces points or not
         bool                                        m_addExtraDistPoints;       //>! specifies whether to add extra points for concave shapes or not
-		bool										m_addNeighboursDistPoints;  //>! specifies whether to add extra points from adjacent clusters or not
 
+        friend HACD * const                         CreateHACD(HeapManager * heapManager = 0);
+        friend void                                 DestroyHACD(HACD * const hacd);
 	};
+    inline HACD * const CreateHACD(HeapManager * heapManager) 
+    { 
+        return new HACD(heapManager);
+    }
+    inline void DestroyHACD(HACD * const hacd) 
+    { 
+        delete hacd;
+    }
 }
 #endif

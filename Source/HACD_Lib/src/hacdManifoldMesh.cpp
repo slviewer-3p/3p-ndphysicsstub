@@ -36,25 +36,34 @@ namespace HACD
     
 	TMMVertex::TMMVertex(void)
 	{
+        Initialize();
+	}
+    void TMMVertex::Initialize()
+	{
 		m_name = 0;
         m_id = 0;
 		m_duplicate = 0;
 		m_onHull = false;
 		m_tag = false;
 	}
+
 	TMMVertex::~TMMVertex(void)
 	{
 	}
 	TMMEdge::TMMEdge(void)
 	{
+        Initialize();
+	}
+    void TMMEdge::Initialize()
+	{
         m_id = 0;
 		m_triangles[0] = m_triangles[1] = m_newFace = 0;
 		m_vertices[0] = m_vertices[1] = 0;
-	}
+    }
 	TMMEdge::~TMMEdge(void)
 	{
 	}
-	TMMTriangle::TMMTriangle(void)
+    void TMMTriangle::Initialize()
 	{
         m_id = 0;
 		for(int i = 0; i < 3; i++)
@@ -63,14 +72,23 @@ namespace HACD
 			m_vertices[0] = 0;
 		}
 		m_visible = false;
+        m_incidentPoints.Initialize();
+    }
+	TMMTriangle::TMMTriangle(void)
+	{
+        Initialize();
 	}
 	TMMTriangle::~TMMTriangle(void)
 	{
 	}
-	TMMesh::TMMesh(void)
+	TMMesh::TMMesh(HeapManager * const heapManager):
+        m_vertices(heapManager), 
+        m_edges(heapManager),
+        m_triangles(heapManager)
 	{
 		m_barycenter = Vec3<Real>(0,0,0);
 		m_diag = 1;
+        m_heapManager = heapManager;   
 	}
 	TMMesh::~TMMesh(void)
 	{
@@ -270,6 +288,7 @@ namespace HACD
         m_vertices  = mesh.m_vertices;
         m_edges     = mesh.m_edges;
         m_triangles = mesh.m_triangles;
+        m_heapManager = mesh.m_heapManager;
  
         // generating mapping
         CircularListElement<TMMVertex> ** vertexMap     = new CircularListElement<TMMVertex> * [nV];
@@ -352,18 +371,20 @@ namespace HACD
 							   const Vec3<double> & V0, const Vec3<double> & V1, 
 							   const Vec3<double> & V2, double &t)
 	{
+        const double EPS = 1e-9;
+        const double EPS1 = 1e-6;
+		t = 0.0;
 		Vec3<double> edge1, edge2, edge3;
-		double det, invDet;
+		double det;
 		edge1 = V1 - V2;
 		edge2 = V2 - V0;
 		Vec3<double> pvec = dir ^ edge2;
 		det = edge1 * pvec;
-		if (det == 0.0)
+		if (det < EPS && det > -EPS)
 			return 0;
-		invDet = 1.0/det;
 		Vec3<double> tvec = P0 - V0;
 		Vec3<double> qvec = tvec ^ edge1;
-		t = (edge2 * qvec) * invDet;
+		t = (edge2 * qvec) / det;
         if (t < 0.0)
         {
             return 0;
@@ -373,10 +394,14 @@ namespace HACD
 		Vec3<double> s0 = (I-V0) ^ edge3;
 		Vec3<double> s1 = (I-V1) ^ edge1;
 		Vec3<double> s2 = (I-V2) ^ edge2;
-		if (s0*s1 > -1e-9 && s2*s1 > -1e-9)
-		{
-			return 1;
-		}
+
+        Vec3<double> normal = edge1 ^ edge2;
+        double diff = normal.GetNorm() - s0.GetNorm() - s1.GetNorm() - s2.GetNorm();            
+
+        if (diff < EPS1 && diff > -EPS1)
+        {
+            return 1;			
+        }
 		return 0;
 	}
 

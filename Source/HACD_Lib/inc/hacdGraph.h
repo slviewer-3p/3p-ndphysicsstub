@@ -20,7 +20,8 @@
 #include <hacdICHull.h>
 #include <map>
 #include <vector>
-#include <set>
+#include <hacdSArray.h>
+//#define HACD_PRECOMPUTE_CHULLS
 
 namespace HACD
 {
@@ -32,29 +33,26 @@ namespace HACD
     class GraphVertex  
     {
     public:
-        bool                                    AddEdge(long name) 
-												{ 
-													m_edges.insert(name); 
-													return true; 
-												}
-        bool                                    DeleteEdge(long name);        
-                                                GraphVertex();
-                                                ~GraphVertex(){ delete m_convexHull;};      
+        bool                                                      AddEdge(long name) 
+                                                                  { 
+                                                                    m_edges.Insert(name); 
+                                                                    return true; 
+                                                                  }
+        bool                                                      DeleteEdge(long name);        
+                                                                  GraphVertex();
+                                                                  ~GraphVertex(){ delete m_convexHull;};      
     private:
-        long                                    m_name;
-        long                                    m_cc;
-        std::set<long>                          m_edges;
-        bool                                    m_deleted;
-        std::vector<long>	                    m_ancestors;
-		std::map<long, DPoint>					m_distPoints;
+        long                                                      m_name;
+        long                                                      m_cc;
+        SArray<long, SARRAY_DEFAULT_MIN_SIZE>                     m_edges;
+        bool                                                      m_deleted;
+        std::vector<long>	                                      m_ancestors;
+		SArray<DPoint, SARRAY_DEFAULT_MIN_SIZE>					  m_distPoints;
 
-        Real                                    m_error;
-        double                                  m_surf;
-		double                                  m_volume;
-        double                                  m_perimeter;
-        double                                  m_concavity;
-        ICHull *                                m_convexHull;
-		std::set<unsigned long long>			m_boudaryEdges;
+        Real                                                      m_concavity;
+        double                                                    m_surf;
+        ICHull *                                                  m_convexHull;
+		SArray<unsigned long long, SARRAY_DEFAULT_MIN_SIZE>       m_boudaryEdges;
         
 
         friend class GraphEdge;
@@ -65,23 +63,23 @@ namespace HACD
 	class GraphEdge 
     {
     public:
-                                                GraphEdge();
-                                                ~GraphEdge(){delete m_convexHull;};
+                                                                 GraphEdge();
+                                                                 ~GraphEdge()
+                                                                 {
+#ifdef HACD_PRECOMPUTE_CHULLS
+                                                                    delete m_convexHull;
+#endif
+                                                                 };
     private:
-        long                                    m_name;
-        long                                    m_v1;
-        long                                    m_v2;
-		std::map<long, DPoint>					m_distPoints;
-        Real                                    m_error;
-        double                                  m_surf;
-		double                                  m_volume;
-        double                                  m_perimeter;
-        double                                  m_concavity;
-        ICHull *                                m_convexHull;
-		std::set<unsigned long long>			m_boudaryEdges;
-        bool                                    m_deleted;
-		
-
+        long                                                     m_name;
+        long                                                     m_v1;
+        long                                                     m_v2;
+        double                                                   m_concavity;
+        Real                                                     m_error;
+#ifdef HACD_PRECOMPUTE_CHULLS
+        ICHull *                                                 m_convexHull;
+#endif
+        bool                                                     m_deleted;
         
         friend class GraphVertex;
         friend class Graph;
@@ -91,28 +89,28 @@ namespace HACD
     class Graph  
     {
     public:
-		size_t									GetNEdges() const { return m_nE;}
-		size_t									GetNVertices() const { return m_nV;}
-        bool                                    EdgeCollapse(long v1, long v2);
-        long                                    AddVertex();
-        long                                    AddEdge(long v1, long v2);
-        bool                                    DeleteEdge(long name);	
-        bool                                    DeleteVertex(long name);
-        long                                    GetEdgeID(long v1, long v2) const;
-		void									Clear();
-        void                                    Print() const;
-        long                                    ExtractCCs();
+		size_t									                 GetNEdges() const { return m_nE;}
+		size_t									                 GetNVertices() const { return m_nV;}
+        bool                                                     EdgeCollapse(long v1, long v2);
+        long                                                     AddVertex();
+        long                                                     AddEdge(long v1, long v2);
+        bool                                                     DeleteEdge(long name);	
+        bool                                                     DeleteVertex(long name);
+        long                                                     GetEdgeID(long v1, long v2) const;
+		void									                 Clear();
+        void                                                     Print() const;
+        long                                                     ExtractCCs();
         
-                                                Graph();
-        virtual                                 ~Graph();      
-		void									Allocate(size_t nV, size_t nE);
+                                                                 Graph();
+        virtual                                                  ~Graph();      
+		void									                 Allocate(size_t nV, size_t nE);
 
     private:
-        size_t                                  m_nCCs;
-        size_t                                  m_nV;
-        size_t                                  m_nE;
-        std::vector<GraphEdge>                  m_edges;
-        std::vector<GraphVertex>                m_vertices;
+        size_t                                                   m_nCCs;
+        size_t                                                   m_nV;
+        size_t                                                   m_nE;
+        std::vector<GraphEdge>                                   m_edges;
+        std::vector<GraphVertex>                                 m_vertices;
 
 		friend class HACD;
     };

@@ -18,16 +18,15 @@ namespace HACD
     
     GraphEdge::GraphEdge()
     {
-        m_convexHull = 0;
         m_v1 = -1;
         m_v2 = -1;
 		m_name = -1;
         m_error = 0;
-        m_surf = 0;
-        m_perimeter = 0;
         m_concavity = 0;
-		m_volume = 0;
         m_deleted = false;
+#ifdef HACD_PRECOMPUTE_CHULLS
+        m_convexHull = 0;
+#endif
 	}
    
     GraphVertex::GraphVertex()
@@ -35,23 +34,14 @@ namespace HACD
         m_convexHull = 0;
 		m_name = -1;
         m_cc = -1;
-        m_error = 0;
-        m_surf = 0;
-        m_perimeter = 0;
         m_concavity = 0;
-		m_volume = 0;
+        m_surf = 0;
         m_deleted = false;
     }
     
     bool GraphVertex::DeleteEdge(long name)
     {
-        std::set<long>::iterator it = m_edges.find(name);
-        if (it != m_edges.end() )
-		{
-			m_edges.erase(it);
-			return true;
-		}
-        return false;
+        return m_edges.Erase(name);
     }
 
     Graph::Graph()
@@ -107,10 +97,6 @@ namespace HACD
 			m_edges[name].m_deleted = true;
             m_vertices[v1].DeleteEdge(name);
             m_vertices[v2].DeleteEdge(name);
-            delete m_edges[name].m_convexHull;
-			m_edges[name].m_distPoints.clear();
-			m_edges[name].m_boudaryEdges.clear();
-            m_edges[name].m_convexHull = 0;
 			m_nE--;
 			return true;
 		}
@@ -121,11 +107,11 @@ namespace HACD
 		if (name < static_cast<long>(m_vertices.size()))
 		{
 			m_vertices[name].m_deleted = true;
-            m_vertices[name].m_edges.clear();
+            m_vertices[name].m_edges.Clear();
             m_vertices[name].m_ancestors = std::vector<long>();
             delete m_vertices[name].m_convexHull;
-			m_vertices[name].m_distPoints.clear();
-			m_vertices[name].m_boudaryEdges.clear();
+			m_vertices[name].m_distPoints.Clear();
+			m_vertices[name].m_boudaryEdges.Clear();
             m_vertices[name].m_convexHull = 0;
 			m_nV--;
 			return true;
@@ -146,31 +132,31 @@ namespace HACD
 											  m_vertices[v2].m_ancestors.begin(), 
 											  m_vertices[v2].m_ancestors.end());
 			// update adjacency information
-			std::set<long> & v1Edges =  m_vertices[v1].m_edges;
-			std::set<long>::const_iterator ed(m_vertices[v2].m_edges.begin());
-			std::set<long>::const_iterator itEnd(m_vertices[v2].m_edges.end());
+			SArray<long, SARRAY_DEFAULT_MIN_SIZE> & v1Edges =  m_vertices[v1].m_edges;
 			long b = -1;
-			for(; ed != itEnd; ++ed) 
+            long idEdge;
+			for(size_t ed = 0; ed < m_vertices[v2].m_edges.Size(); ++ed) 
 			{
-				if (m_edges[*ed].m_v1 == v2)
+                idEdge = m_vertices[v2].m_edges[ed];
+				if (m_edges[idEdge].m_v1 == v2)
 				{
-					b = m_edges[*ed].m_v2;
+					b = m_edges[idEdge].m_v2;
 				}
 				else
 				{
-					b = m_edges[*ed].m_v1;
+					b = m_edges[idEdge].m_v1;
 				}
 				if (GetEdgeID(v1, b) >= 0)
 				{
-					m_edges[*ed].m_deleted = true;
-					m_vertices[b].DeleteEdge(*ed);
+					m_edges[idEdge].m_deleted = true;
+					m_vertices[b].DeleteEdge(idEdge);
 					m_nE--;
 				}
 				else
 				{
-					m_edges[*ed].m_v1 = v1;
-					m_edges[*ed].m_v2 = b;
-					v1Edges.insert(*ed);
+					m_edges[idEdge].m_v1 = v1;
+					m_edges[idEdge].m_v2 = b;
+					v1Edges.Insert(idEdge);
 				}
 			}
 			// delete the vertex v2
@@ -184,14 +170,14 @@ namespace HACD
     {
 		if (v1 < static_cast<long>(m_vertices.size()) && !m_vertices[v1].m_deleted)
 		{
-			std::set<long>::const_iterator ed(m_vertices[v1].m_edges.begin());
-			std::set<long>::const_iterator itEnd(m_vertices[v1].m_edges.end());
-			for(; ed != itEnd; ++ed) 
+            long idEdge;
+			for(size_t ed = 0; ed < m_vertices[v1].m_edges.Size(); ++ed) 
 			{
-				if ( (m_edges[*ed].m_v1 == v2) || 
-					 (m_edges[*ed].m_v2 == v2)   ) 
+                idEdge =  m_vertices[v1].m_edges[ed];
+				if ( (m_edges[idEdge].m_v1 == v2) || 
+					 (m_edges[idEdge].m_v2 == v2)   ) 
 				{
-					return m_edges[*ed].m_name;
+					return m_edges[idEdge].m_name;
 				}
 			}
 		}
@@ -209,11 +195,11 @@ namespace HACD
 			{
 
 				std::cout  << currentVertex.m_name	  << "\t";
-				std::set<long>::const_iterator ed(currentVertex.m_edges.begin());
-				std::set<long>::const_iterator itEnd(currentVertex.m_edges.end());
-				for(; ed != itEnd; ++ed) 
+				long idEdge;
+				for(size_t ed = 0; ed < currentVertex.m_edges.Size(); ++ed) 
 				{
-					std::cout  << "(" << m_edges[*ed].m_v1 << "," << m_edges[*ed].m_v2 << ") "; 	  
+                    idEdge = currentVertex.m_edges[ed];
+					std::cout  << "(" << m_edges[idEdge].m_v1 << "," << m_edges[idEdge].m_v2 << ") "; 	  
 				}
 				std::cout << std::endl;
 			}			
@@ -253,6 +239,7 @@ namespace HACD
         // we get the CCs
         m_nCCs = 0;
 		long v2 = -1;
+        long idEdge;
 		std::vector<long> temp;
         for (size_t v = 0; v < m_vertices.size(); ++v) 
 		{
@@ -264,18 +251,17 @@ namespace HACD
                 while (temp.size()) 
 				{
                     long vertex = temp[temp.size()-1];
-                    temp.pop_back();                    
-					std::set<long>::const_iterator ed(m_vertices[vertex].m_edges.begin());
-					std::set<long>::const_iterator itEnd(m_vertices[vertex].m_edges.end());
-					for(; ed != itEnd; ++ed) 
+                    temp.pop_back();                                        
+					for(size_t ed = 0; ed < m_vertices[vertex].m_edges.Size(); ++ed) 
 					{
-                        if (m_edges[*ed].m_v1 == vertex) 
+                        idEdge =  m_vertices[vertex].m_edges[ed];
+                        if (m_edges[idEdge].m_v1 == vertex) 
 						{
-                            v2 = m_edges[*ed].m_v2;
+                            v2 = m_edges[idEdge].m_v2;
                         }
                         else 
 						{
-                            v2 = m_edges[*ed].m_v1;
+                            v2 = m_edges[idEdge].m_v1;
                         }
                         if ( !m_vertices[v2].m_deleted && m_vertices[v2].m_cc == -1) 
 						{

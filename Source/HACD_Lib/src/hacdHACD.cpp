@@ -21,7 +21,9 @@
 #include <algorithm>
 #include <iterator>
 #include <limits>
-
+#include <hacdMeshDecimator.h>
+#include <hacdRaycastMesh.h>
+//#define HACD_DEBUG
 namespace HACD
 { 
 	double  HACD::Concavity(ICHull & ch, std::map<long, DPoint> & distPoints)
@@ -30,23 +32,41 @@ namespace HACD
 		double distance = 0.0;       
 		std::map<long, DPoint>::iterator itDP(distPoints.begin());
 		std::map<long, DPoint>::iterator itDPEnd(distPoints.end());
+		long pt;
+		const long nPoints = static_cast<long>(m_nPoints);
+		const double eps = -0.001;
 		for(; itDP != itDPEnd; ++itDP) 
 		{
             if (!(itDP->second).m_computed)
             {
-                if (itDP->first >= 0)
+                if (itDP->first >= nPoints)
                 {
-                    distance = ch.ComputeDistance(itDP->first, m_points[itDP->first], m_normals[itDP->first], (itDP->second).m_computed, true);
+					pt = itDP->first - nPoints;
+					if ( ch.IsInside(m_extraDistPoints[pt], eps))
+					{
+						distance = ch.ComputeDistance(itDP->first, m_extraDistPoints[pt], m_extraDistNormals[pt], (itDP->second).m_computed, true);
+					}
+					else
+					{
+						distance = 0.0;
+					}
+                }
+				else if (itDP->first >= 0)
+                {
+					pt = itDP->first;
+					distance = ch.ComputeDistance(itDP->first, m_points[pt], m_normals[pt], (itDP->second).m_computed, true);
                 }
                 else
                 {
-                    distance = ch.ComputeDistance(itDP->first, m_facePoints[-itDP->first-1], m_faceNormals[-itDP->first-1], (itDP->second).m_computed, true);
-                }
+					pt = -itDP->first-1;
+					distance = ch.ComputeDistance(itDP->first, m_facePoints[pt], m_faceNormals[pt], (itDP->second).m_computed, true);
+				}
             }
             else
             {
                 distance = (itDP->second).m_dist;
             }
+
 			if (concavity < distance) 
 			{
 				concavity = distance;
@@ -116,14 +136,14 @@ namespace HACD
         if (m_ccConnectDist >= 0.0)
         {
             m_graph.ExtractCCs();
-            
-            if( m_callBack )
+            if (m_callBack)
             {
                 char msg[1024];
                 sprintf(msg, "nCC %lu\n", m_graph.m_nCCs);
-               (*m_callBack)(msg, 0.0, 0.0,  m_graph.GetNVertices());
+                (*m_callBack)(msg, 0.0, 0.0,  m_graph.GetNVertices());
+                
             }
-
+            
             if (m_graph.m_nCCs > 1) 
             {
                 std::vector< std::set<long> > cc2V;
@@ -172,7 +192,6 @@ namespace HACD
                             }
                             if (distC1C2 <= m_ccConnectDist && t1 >= 0 && t2 >= 0)
                             {
-								
                                 m_graph.AddEdge(t1, t2);                    
                             }
                         }
@@ -191,26 +210,51 @@ namespace HACD
         {
             delete [] m_facePoints;
             delete [] m_faceNormals;
-            m_facePoints = new Vec3<Real>[m_nTriangles];
+            
+			m_facePoints = new Vec3<Real>[m_nTriangles];
             m_faceNormals = new Vec3<Real>[m_nTriangles];
+/*
+            m_facePoints = new Vec3<Real>[4*m_nTriangles];
+            m_faceNormals = new Vec3<Real>[4*m_nTriangles];
+*/
         }
 		memset(m_normals, 0, sizeof(Vec3<Real>) * m_nPoints);
-        for(unsigned long f = 0; f < m_nTriangles; f++)
+
+        RaycastMesh rm;
+        if (m_addExtraDistPoints)
         {
-            i = m_triangles[f].X();
+            rm.Initialize(m_nPoints, m_nTriangles, m_points, m_triangles, 15);
+            m_extraDistPoints = new Vec3<Real>[m_nTriangles];
+            m_extraDistNormals = new Vec3<Real>[m_nTriangles];
+        }
+        double progressOld = -1.0;
+        double progress = 0.0;
+		char msg[1024];
+		double ptgStep = 1.0;
+		m_area = 0.0;				
+		for(unsigned long f = 0; f < m_nTriangles; f++)
+        {
+            progress = f * 100.0 / m_nTriangles;
+            if (fabs(progress-progressOld) > ptgStep && m_callBack)
+            {
+				sprintf(msg, "%3.2f %% \t \t \r", progress);
+				(*m_callBack)(msg, progress, 0.0,  m_nTriangles);
+                progressOld = progress;
+            }
+
+			i = m_triangles[f].X();
             j = m_triangles[f].Y();
             k = m_triangles[f].Z();
-		
-			m_graph.m_vertices[f].m_distPoints[i].m_distOnly = false;
-			m_graph.m_vertices[f].m_distPoints[j].m_distOnly = false;
-			m_graph.m_vertices[f].m_distPoints[k].m_distOnly = false;
+			m_graph.m_vertices[f].m_distPoints.PushBack(DPoint(i, 0, false, false));
+			m_graph.m_vertices[f].m_distPoints.PushBack(DPoint(j, 0, false, false));
+			m_graph.m_vertices[f].m_distPoints.PushBack(DPoint(k, 0, false, false));
             
-            ICHull  * ch = new ICHull;
+            ICHull  * ch = new ICHull(m_heapManager);
             m_graph.m_vertices[f].m_convexHull = ch;
             ch->AddPoint(m_points[i], i);
             ch->AddPoint(m_points[j], j);
             ch->AddPoint(m_points[k], k);
-			ch->SetDistPoints(&m_graph.m_vertices[f].m_distPoints);
+			ch->SetDistPoints(0);
 
 			u = m_points[j] - m_points[i];
 			v = m_points[k] - m_points[i];
@@ -222,65 +266,80 @@ namespace HACD
 			m_normals[k] += normal;
 
 			m_graph.m_vertices[f].m_surf = normal.GetNorm();
-			m_graph.m_vertices[f].m_perimeter = u.GetNorm() + v.GetNorm() + w.GetNorm();
-            
+			m_area += m_graph.m_vertices[f].m_surf;
             normal.Normalize();
-
-			m_graph.m_vertices[f].m_boudaryEdges.insert(GetEdgeIndex(i,j));
-			m_graph.m_vertices[f].m_boudaryEdges.insert(GetEdgeIndex(j,k));
-			m_graph.m_vertices[f].m_boudaryEdges.insert(GetEdgeIndex(k,i));
+			m_graph.m_vertices[f].m_boudaryEdges.Insert(GetEdgeIndex(i,j));
+			m_graph.m_vertices[f].m_boudaryEdges.Insert(GetEdgeIndex(j,k));
+			m_graph.m_vertices[f].m_boudaryEdges.Insert(GetEdgeIndex(k,i));
             if(m_addFacesPoints)
             {
                 m_faceNormals[f] = normal;
                 m_facePoints[f] = (m_points[i] + m_points[j] + m_points[k]) / 3.0;
-                m_graph.m_vertices[f].m_distPoints[-static_cast<long>(f)-1].m_distOnly = true;
+				m_graph.m_vertices[f].m_distPoints.PushBack(DPoint(-static_cast<long>(f)-1, 0, false, true));
+/*
+                m_facePoints[m_nTriangles + f] = (m_points[i] + m_points[j]) / 2.0;
+				m_graph.m_vertices[f].m_distPoints.PushBack(DPoint(-static_cast<long>(m_nTriangles + f)-1, 0, false, true));
+                m_facePoints[2*m_nTriangles + f] = (m_points[i] + m_points[k]) / 2.0;
+				m_graph.m_vertices[f].m_distPoints.PushBack(DPoint(-static_cast<long>(2*m_nTriangles + f)-1, 0, false, true));
+                m_facePoints[3*m_nTriangles + f] = (m_points[j] + m_points[k]) / 2.0;
+				m_graph.m_vertices[f].m_distPoints.PushBack(DPoint(-static_cast<long>(3*m_nTriangles + f)-1, 0, false, true));
+*/
             }
             if (m_addExtraDistPoints)	
-            {// we need a kd-tree structure to accelerate this part!
-                long i1, j1, k1;
-                Vec3<Real> u1, v1, normal1;
-				normal = -normal;
-                double distance = 0.0;
-                double distMin = 0.0;
-                size_t faceIndex = m_nTriangles;
+            {
                 Vec3<Real> seedPoint((m_points[i] + m_points[j] + m_points[k]) / 3.0);
-                long nhit = 0;
-                for(size_t f1 = 0; f1 < m_nTriangles; f1++)
-                {
-                    i1 = m_triangles[f1].X();
-                    j1 = m_triangles[f1].Y();
-                    k1 = m_triangles[f1].Z();
-                    u1 = m_points[j1] - m_points[i1];
-                    v1 = m_points[k1] - m_points[i1];
-                    normal1 = (u1 ^ v1);
-                    if (normal * normal1 > 0.0)
-                    {
-                        nhit = IntersectRayTriangle(Vec3<double>(seedPoint.X(), seedPoint.Y(), seedPoint.Z()),
+				Vec3<Real> hitPoint;
+				Vec3<Real> hitNormal;
+				normal = -normal;
+                size_t faceIndex = m_nTriangles;
+
+				Float dist;
+				long hitTriangle;
+				if (rm.Raycast(seedPoint,normal,hitTriangle,dist, hitPoint, hitNormal))
+				{
+					faceIndex = hitTriangle;
+				}
+/*
+				Vec3<Real> u1, v1, normal1;
+				double distance = 0.0;
+				double distMin = 0.0;
+                    
+				long nhit = 0;
+				for(size_t f1 = 0; f1 < m_nTriangles; f1++)
+				{
+					i1 = m_triangles[f1].X();
+					j1 = m_triangles[f1].Y();
+					k1 = m_triangles[f1].Z();
+
+					u1 = m_points[j1] - m_points[i1];
+					v1 = m_points[k1] - m_points[i1];
+					normal1 = (u1 ^ v1);
+					if (normal * normal1 > 0.0)
+					{
+						nhit = IntersectRayTriangle(Vec3<double>(seedPoint.X(), seedPoint.Y(), seedPoint.Z()),
 													Vec3<double>(normal.X(), normal.Y(), normal.Z()),
 													Vec3<double>(m_points[i1].X(), m_points[i1].Y(), m_points[i1].Z()),
 													Vec3<double>(m_points[j1].X(), m_points[j1].Y(), m_points[j1].Z()),
 													Vec3<double>(m_points[k1].X(), m_points[k1].Y(), m_points[k1].Z()),
 													distance);
-                        if ((nhit==1) && ((distMin > distance) || (faceIndex == m_nTriangles)))
-                        {
-                            distMin = distance;
-                            faceIndex = f1;
-                        }
+						if ((nhit==1) && ((distMin > distance) || (faceIndex == m_nTriangles)))
+						{
+							distMin = distance;
+							faceIndex = f1;
+						}
+					}
+				}
 
-                    }
-                }
+				if ( faceIndex != hitTriangle)
+				{
+					printf("%i %i %i\n", f, faceIndex, hitTriangle);
+				}
+*/                
                 if (faceIndex < m_nTriangles )
                 {
-                    i1 = m_triangles[faceIndex].X();
-                    j1 = m_triangles[faceIndex].Y();
-                    k1 = m_triangles[faceIndex].Z();
-                    m_graph.m_vertices[f].m_distPoints[i1].m_distOnly = true;
-                    m_graph.m_vertices[f].m_distPoints[j1].m_distOnly = true;
-                    m_graph.m_vertices[f].m_distPoints[k1].m_distOnly = true;
-					if (m_addFacesPoints)
-					{
-						m_graph.m_vertices[f].m_distPoints[-static_cast<long>(faceIndex)-1].m_distOnly = true;
-					}
+					m_extraDistPoints[f] = hitPoint;
+					m_extraDistNormals[f] = hitNormal;
+					m_graph.m_vertices[f].m_distPoints.PushBack(DPoint(m_nPoints+f, 0, false, true));
 				}
             }
         }
@@ -339,9 +398,15 @@ namespace HACD
 			}
 		}
     }
-	HACD::HACD(void)
+	HACD::HACD(HeapManager * heapManager):m_heapManager(heapManager)
 	{
+		m_extraDistPoints = 0;
+		m_extraDistNormals = 0;;
         m_convexHulls = 0;
+		m_trianglesDecimated = 0;
+        m_pointsDecimated = 0;
+        m_nTrianglesDecimated = 0;
+        m_nPointsDecimated = 0;
 		m_triangles = 0;
         m_points = 0;
         m_normals = 0;
@@ -351,18 +416,22 @@ namespace HACD
         m_concavity = 0.0;
         m_diag = 1.0;
 		m_barycenter = Vec3<Real>(0.0, 0.0,0.0);
-        m_alpha = 0.1;
-        m_beta = 0.1;
+        m_alpha = 0.0;
+        m_beta = 0.0;
+		m_gamma = 0.01;
         m_nVerticesPerCH = 30;
 		m_callBack = 0;
         m_addExtraDistPoints = false;
-		m_addNeighboursDistPoints = false;
 		m_scale = 1000.0;
 		m_partition = 0;
 		m_nMinClusters = 3;
         m_facePoints = 0;
         m_faceNormals = 0;
         m_ccConnectDist = 30;
+		m_targetNTrianglesDecimatedMesh = 1000;
+		m_flatRegionThreshold = 1.0;
+		m_smallClusterThreshold = 0.25;
+		m_area = 0.0;					
 	}																
 	HACD::~HACD(void)
 	{
@@ -371,177 +440,180 @@ namespace HACD
 		delete [] m_partition;
         delete [] m_facePoints;
         delete [] m_faceNormals;
+        delete [] m_trianglesDecimated;
+        delete [] m_pointsDecimated;
+        delete [] m_extraDistPoints;
+        delete [] m_extraDistNormals;
 	}
-	int iteration = 0;
+
     void HACD::ComputeEdgeCost(size_t e)
     {
 		GraphEdge & gE = m_graph.m_edges[e];
         long v1 = gE.m_v1;
         long v2 = gE.m_v2;
 
-        if (m_graph.m_vertices[v2].m_distPoints.size()>m_graph.m_vertices[v1].m_distPoints.size())
+        if (m_graph.m_vertices[v2].m_ancestors.size()>m_graph.m_vertices[v1].m_ancestors.size())
         {
             gE.m_v1 = v2;
             gE.m_v2 = v1;
-            //std::swap<long>(v1, v2);
 			std::swap(v1, v2);
         }
 		GraphVertex & gV1 = m_graph.m_vertices[v1];
 		GraphVertex & gV2 = m_graph.m_vertices[v2];
-	
-        // delete old convex-hull
-        delete gE.m_convexHull;
-        // create the edge's convex-hull
-        ICHull  * ch = new ICHull;
-        gE.m_convexHull = ch;
-        (*ch) = (*gV1.m_convexHull);
-        
-		// update distPoints
-		gE.m_distPoints = gV1.m_distPoints;
-		std::map<long, DPoint>::iterator itDP(gV2.m_distPoints.begin());
-		std::map<long, DPoint>::iterator itDPEnd(gV2.m_distPoints.end());
-		std::map<long, DPoint>::iterator itDP1;
-     
-		for(; itDP != itDPEnd; ++itDP) 
+#ifdef HACD_DEBUG
+		if (v1 == 308 && v2==276)
 		{
-			itDP1 = gE.m_distPoints.find(itDP->first);
-			if (itDP1 == gE.m_distPoints.end())
+			gV1.m_convexHull->m_mesh.Save("debug1.wrl");
+			gV2.m_convexHull->m_mesh.Save("debug2.wrl");
+		}
+
+#endif
+	
+        // create the edge's convex-hull
+        ICHull  * ch = new ICHull(m_heapManager);
+        (*ch) = (*gV1.m_convexHull);       
+		// update distPoints
+#ifdef HACD_PRECOMPUTE_CHULLS
+        delete gE.m_convexHull;
+        gE.m_convexHull = 0;
+#endif
+        std::map<long, DPoint> distPoints;
+		for(size_t p = 0; p < gV1.m_distPoints.Size(); ++p) 
+		{
+			distPoints[gV1.m_distPoints[p].m_name] = gV1.m_distPoints[p];
+		}
+
+		std::map<long, DPoint>::iterator itDP1;	
+		for(size_t p = 0; p < gV2.m_distPoints.Size(); ++p) 
+		{
+			const DPoint & point =  gV2.m_distPoints[p];
+			itDP1 = distPoints.find(point.m_name);
+			if (itDP1 == distPoints.end())
 			{
-                gE.m_distPoints[itDP->first].m_distOnly = (itDP->second).m_distOnly;
-                if ( !(itDP->second).m_distOnly )
+				DPoint newPoint(point.m_name, 0, false, point.m_distOnly);
+				distPoints.insert(std::pair<long, DPoint>(point.m_name, newPoint));
+                if ( !point.m_distOnly )
                 {
-                    ch->AddPoint(m_points[itDP->first], itDP->first);
+                    ch->AddPoint(m_points[point.m_name], point.m_name);
                 }
 			}
             else
             {
-                if ( (itDP1->second).m_distOnly && !(itDP->second).m_distOnly)
+                if ( (itDP1->second).m_distOnly && !point.m_distOnly)
                 {
-                    gE.m_distPoints[itDP->first].m_distOnly = false;
-                    ch->AddPoint(m_points[itDP->first], itDP->first);
+                    (itDP1->second).m_distOnly = false;
+                    ch->AddPoint(m_points[point.m_name], point.m_name);
                 }
             }
 		}
 		
-		ch->SetDistPoints(&gE.m_distPoints);
+		ch->SetDistPoints(&distPoints);
         // create the convex-hull
         while (ch->Process() == ICHullErrorInconsistent)		// if we face problems when constructing the visual-hull. really ugly!!!!
 		{
 //			if (m_callBack) (*m_callBack)("\t Problem with convex-hull construction [HACD::ComputeEdgeCost]\n", 0.0, 0.0, 0);
-			ch = new ICHull;
-			CircularList<TMMVertex> & verticesCH = (gE.m_convexHull)->GetMesh().m_vertices;
+            ICHull  * chOld = ch;
+			ch = new ICHull(m_heapManager);
+			CircularList<TMMVertex> & verticesCH = chOld->GetMesh().m_vertices;
 			size_t nV = verticesCH.GetSize();
 			long ptIndex = 0;
 			verticesCH.Next();
+			// add noise to avoid the problem
+			ptIndex = verticesCH.GetHead()->GetData().m_name;			
+			ch->AddPoint(m_points[ptIndex]+ m_scale * 0.0001 * Vec3<Real>(rand() % 10 - 5, rand() % 10 - 5, rand() % 10 - 5), ptIndex);
 			for(size_t v = 1; v < nV; ++v)
 			{
-				ptIndex = verticesCH.GetHead()->GetData().m_name;
+				ptIndex = verticesCH.GetHead()->GetData().m_name;			
 				ch->AddPoint(m_points[ptIndex], ptIndex);
 				verticesCH.Next();
 			}
-			delete gE.m_convexHull;
-			gE.m_convexHull = ch;
+			delete chOld;
 		}
-		double volume = 0.0; 
-        double concavity = 0.0;
-		if (ch->IsFlat())
+#ifdef HACD_DEBUG
+		if (v1 == 438 && v2==468)
 		{
-			bool insideHull;
-            std::map<long, DPoint>::iterator itDP(gE.m_distPoints.begin());
-            std::map<long, DPoint>::iterator itDPEnd(gE.m_distPoints.end());
+			const long nPoints = static_cast<long>(m_nPoints);
+            std::map<long, DPoint>::iterator itDP(distPoints.begin());
+            std::map<long, DPoint>::iterator itDPEnd(distPoints.end());
             for(; itDP != itDPEnd; ++itDP) 
             {	
-                if (itDP->first >= 0)
+
+				if (itDP->first >= nPoints)
                 {
-                    concavity = std::max<double>(concavity, ch->ComputeDistance(itDP->first, m_points[itDP->first], m_normals[itDP->first], insideHull, false));
+					long pt = itDP->first - nPoints;
+					ch->AddPoint(m_extraDistPoints[pt], itDP->first);
+				}
+				else if (itDP->first >= 0)
+                {
+					long pt = itDP->first;
+					ch->AddPoint(m_points[pt], itDP->first);
                 }
+                else
+                {
+					long pt = -itDP->first-1;
+					ch->AddPoint(m_facePoints[pt], itDP->first);
+					ch->AddPoint(m_facePoints[pt] + 10.0 * m_faceNormals[pt] , itDP->first);
+				}
 			}
+			printf("-***->\n");
+
+			ch->m_mesh.Save("debug.wrl");
 		}
-        else
+#endif
+		double surf = gV1.m_surf + gV2.m_surf;
+        double concavity = 0.0;	
+		double surfCH = ch->ComputeArea() / 2.0;
+		double volumeCH = ch->ComputeVolume();
+		double vol2Surf = volumeCH / surfCH;
+		double concavity_flat = sqrt(fabs(surfCH-surf));
+		double weightFlat = std::max(0.0, 1.0 - pow(- vol2Surf * 100.0 / (m_scale * m_flatRegionThreshold), 2.0));
+
+//		concavity_flat *= std::max(exp(- vol2Surf * 100.0 / (m_scale * m_flatRegionThreshold)) - exp(-1.0), 0.0);
+		concavity_flat *= weightFlat;
+		if(!ch->IsFlat())
         {
-            if (m_addNeighboursDistPoints)
-            {  // add distance points from adjacent clusters
-                std::set<long> eEdges;
-                std::set_union(gV1.m_edges.begin(), 
-                               gV1.m_edges.end(), 
-                               gV2.m_edges.begin(), 
-                               gV2.m_edges.end(),
-                               std::inserter( eEdges, eEdges.begin() ) );
-                
-                std::set<long>::const_iterator ed(eEdges.begin());
-                std::set<long>::const_iterator itEnd(eEdges.end());
-                long a, b, c;
-                for(; ed != itEnd; ++ed) 
-                {
-                    a = m_graph.m_edges[*ed].m_v1;
-                    b = m_graph.m_edges[*ed].m_v2;
-                    if ( a != v2 && a != v1)
-                    {
-                        c = a;
-                    }
-                    else if ( b != v2 && b != v1)
-                    {
-                        c = b;
-                    }
-                    else
-                    {
-                        c = -1;
-                    }
-                    if ( c > 0)
-                    {
-                        GraphVertex & gVC = m_graph.m_vertices[c];
-                        std::map<long, DPoint>::iterator itDP(gVC.m_distPoints.begin());
-                        std::map<long, DPoint>::iterator itDPEnd(gVC.m_distPoints.end());
-                        std::map<long, DPoint>::iterator itDP1;
-                        for(; itDP != itDPEnd; ++itDP) 
-                        {
-                            itDP1 = gE.m_distPoints.find(itDP->first);
-							if (itDP1 == gE.m_distPoints.end())
-							{
-								if (itDP->first >= 0 && itDP1 == gE.m_distPoints.end() && ch->IsInside(m_points[itDP->first]))
-								{
-	                                gE.m_distPoints[itDP->first].m_distOnly = true;
-		                        }
-								else if (itDP->first < 0 && ch->IsInside(m_facePoints[-itDP->first-1]))
-								{
-									gE.m_distPoints[itDP->first].m_distOnly = true;
-								}
-							}
-                        }
-                    }
-                }
-            }
-            concavity = Concavity(*ch, gE.m_distPoints);
+            concavity = Concavity(*ch, distPoints);
         }
-  
+		concavity += concavity_flat;
+#ifdef HACD_PRECOMPUTE_CHULLS
+        gE.m_convexHull = ch;
+#else
+        delete ch;
+#endif
+
 		// compute boudary edges
 		double perimeter = 0.0;
-		double surf    = 1.0;
 		if (m_alpha > 0.0)
 		{
-			gE.m_boudaryEdges.clear();
-			std::set_symmetric_difference (gV1.m_boudaryEdges.begin(), 
-								  gV1.m_boudaryEdges.end(), 
-								  gV2.m_boudaryEdges.begin(), 
-								  gV2.m_boudaryEdges.end(),
-								  std::inserter( gE.m_boudaryEdges, 
-												 gE.m_boudaryEdges.begin() ) );
+            std::set<unsigned long long> boudaryEdges1;
+            for(size_t edV1 = 0; edV1 < gV1.m_boudaryEdges.Size(); ++edV1) 
+            {
+                boudaryEdges1.insert(gV1.m_boudaryEdges[edV1]);
+            }
+            std::set<unsigned long long> boudaryEdges2;
+            for(size_t edV2 = 0; edV2 < gV2.m_boudaryEdges.Size(); ++edV2) 
+            {
+                boudaryEdges2.insert(gV2.m_boudaryEdges[edV2]);
+            }                      
+			std::set<unsigned long long> boudaryEdges;
+			std::set_symmetric_difference (boudaryEdges1.begin(), 
+								           boudaryEdges1.end(), 
+								           boudaryEdges2.begin(), 
+								           boudaryEdges2.end(),
+								           std::inserter( boudaryEdges, boudaryEdges.begin() ) );
 
-			std::set<unsigned long long>::const_iterator itBE(gE.m_boudaryEdges.begin());
-			std::set<unsigned long long>::const_iterator itBEEnd(gE.m_boudaryEdges.end());
+			std::set<unsigned long long>::const_iterator itBE(boudaryEdges.begin());
+			std::set<unsigned long long>::const_iterator itBEEnd(boudaryEdges.end());
 			for(; itBE != itBEEnd; ++itBE)
 			{
 					perimeter += (m_points[static_cast<long>((*itBE) >> 32)] - 
 								   m_points[static_cast<long>((*itBE) & 0xFFFFFFFFULL)]).GetNorm();
 			}
-			surf    = gV1.m_surf + gV2.m_surf;
 		}
         double ratio   = perimeter * perimeter / (4.0 * sc_pi * surf);
-		gE.m_volume	   = (m_beta == 0.0)?0.0:ch->ComputeVolume()/pow(m_scale, 3.0);						// cluster's volume
-        gE.m_surf      = surf;                          // cluster's area  
-        gE.m_perimeter = perimeter;                     // cluster's perimeter
         gE.m_concavity = concavity;                     // cluster's concavity
-        gE.m_error     = static_cast<Real>(concavity +  m_alpha * ratio + m_beta * volume);	// cluster's priority
+		double volume  = volumeCH/pow(m_scale, 3.0);	// cluster's volume
+        gE.m_error     = static_cast<Real>(concavity +  m_alpha * (1.0 - weightFlat) * ratio + m_beta * volume + m_gamma * static_cast<double>(distPoints.size()) / m_nPoints);	// cluster's priority
 	}
     bool HACD::InitializePriorityQueue()
     {
@@ -555,6 +627,7 @@ namespace HACD
     }
 	void HACD::Simplify()
 	{
+		double areaThreshold = m_area * m_smallClusterThreshold / 100.0;
 		long v1 = -1;
         long v2 = -1;        
         double progressOld = -1.0;
@@ -562,10 +635,9 @@ namespace HACD
         double globalConcavity  = 0.0;     
 		char msg[1024];
 		double ptgStep = 1.0;
-        while ( (globalConcavity < m_concavity) && 
-				(m_graph.GetNVertices() > m_nMinClusters) && 
-				(m_graph.GetNEdges() > 0)) 
+        while ( !m_pqueue.empty() ) 
 		{
+
             progress = 100.0-m_graph.GetNVertices() * 100.0 / m_nTriangles;
             if (fabs(progress-progressOld) > ptgStep && m_callBack)
             {
@@ -598,46 +670,206 @@ namespace HACD
 			while (  m_graph.m_edges[currentEdge.m_name].m_deleted || 
 					 m_graph.m_edges[currentEdge.m_name].m_error != currentEdge.m_priority);
 
-
-			if (m_graph.m_edges[currentEdge.m_name].m_concavity < m_concavity && !done)
+			if (!done)
 			{
-                globalConcavity = std::max<double>(globalConcavity ,m_graph.m_edges[currentEdge.m_name].m_concavity);
 				v1 = m_graph.m_edges[currentEdge.m_name].m_v1;
 				v2 = m_graph.m_edges[currentEdge.m_name].m_v2;	
-				// update vertex info
-				m_graph.m_vertices[v1].m_error     = m_graph.m_edges[currentEdge.m_name].m_error;
-				m_graph.m_vertices[v1].m_surf	   = m_graph.m_edges[currentEdge.m_name].m_surf;
-				m_graph.m_vertices[v1].m_volume	   = m_graph.m_edges[currentEdge.m_name].m_volume;
-				m_graph.m_vertices[v1].m_concavity = m_graph.m_edges[currentEdge.m_name].m_concavity;
-				m_graph.m_vertices[v1].m_perimeter = m_graph.m_edges[currentEdge.m_name].m_perimeter;
-                m_graph.m_vertices[v1].m_distPoints   = m_graph.m_edges[currentEdge.m_name].m_distPoints;
-                (*m_graph.m_vertices[v1].m_convexHull) = (*m_graph.m_edges[currentEdge.m_name].m_convexHull);
-				(m_graph.m_vertices[v1].m_convexHull)->SetDistPoints(&(m_graph.m_vertices[v1].m_distPoints));
-				m_graph.m_vertices[v1].m_boudaryEdges   = m_graph.m_edges[currentEdge.m_name].m_boudaryEdges;
-				
-				// We apply the optimal ecol
-//				std::cout << "v1 " << v1 << " v2 " << v2 << std::endl;
-				m_graph.EdgeCollapse(v1, v2);
-				// recompute the adjacent edges costs
-				std::set<long>::const_iterator itE(m_graph.m_vertices[v1].m_edges.begin()), 
-								   			   itEEnd(m_graph.m_vertices[v1].m_edges.end());
-				for(; itE != itEEnd; ++itE)
-				{
-					size_t e = *itE;
-					ComputeEdgeCost(static_cast<long>(e));
-					m_pqueue.push(GraphEdgePriorityQueue(static_cast<long>(e), m_graph.m_edges[e].m_error));
+				bool condition1 = (m_graph.m_edges[currentEdge.m_name].m_concavity < m_concavity) && (globalConcavity < m_concavity) && (m_graph.GetNVertices() > m_nMinClusters) && (m_graph.GetNEdges() > 0);
+				bool condition2 = (m_graph.m_vertices[v1].m_surf < areaThreshold || m_graph.m_vertices[v2].m_surf < areaThreshold);
+				if (condition1 || condition2)
+                {
+					if ((!condition1) && m_callBack)
+					{
+						sprintf(msg, "\n-> %lu\t%f\t%f\t%f\n", m_pqueue.size(), m_graph.m_vertices[v1].m_surf*100.0/m_area, m_graph.m_vertices[v2].m_surf*100.0/m_area, m_graph.m_edges[currentEdge.m_name].m_concavity);
+						(*m_callBack)(msg, progress, globalConcavity,  m_graph.GetNVertices());
+					}
+					globalConcavity = std::max<double>(globalConcavity ,m_graph.m_edges[currentEdge.m_name].m_concavity);
+					GraphEdge & gE = m_graph.m_edges[currentEdge.m_name];
+					GraphVertex & gV1 = m_graph.m_vertices[v1];
+					GraphVertex & gV2 = m_graph.m_vertices[v2];
+					// update vertex info
+					gV1.m_concavity     = gE.m_concavity;
+	#ifdef HACD_PRECOMPUTE_CHULLS
+					(*gV1.m_convexHull) = (*gE.m_convexHull);
+					(gV1.m_convexHull)->SetDistPoints(0);
+					// update distPoints
+					std::map<long, DPoint> distPoints;
+					for(size_t p = 0; p < gV1.m_distPoints.Size(); ++p) 
+					{
+						distPoints[gV1.m_distPoints[p].m_name] = gV1.m_distPoints[p];
+					}
+
+					std::map<long, DPoint>::iterator itDP1;	
+					for(size_t p = 0; p < gV2.m_distPoints.Size(); ++p) 
+					{
+						const DPoint & point =  gV2.m_distPoints[p];
+						itDP1 = distPoints.find(point.m_name);
+						if (itDP1 == distPoints.end())
+						{
+							DPoint newPoint(point.m_name, 0, false, point.m_distOnly);
+							distPoints.insert(std::pair<long, DPoint>(point.m_name, newPoint));
+						}
+						else
+						{
+							if ( (itDP1->second).m_distOnly && !point.m_distOnly)
+							{
+								(itDP1->second).m_distOnly = false;
+							}
+						}
+					}
+					gV1.m_distPoints.Clear();
+					gV1.m_distPoints.Resize(distPoints.size());
+					std::map<long, DPoint>::iterator itDP(distPoints.begin());
+					std::map<long, DPoint>::iterator itDPEnd(distPoints.end());
+					for(; itDP != itDPEnd; ++itDP) 
+					{
+						const DPoint & point = itDP->second;
+						gV1.m_distPoints.PushBack(itDP->second);
+					}
+	#else
+					ICHull  * ch = gV1.m_convexHull;								  
+
+					ch->SetDistPoints(0);											  
+					// update distPoints
+					std::map<long, DPoint> distPoints;
+					for(size_t p = 0; p < gV1.m_distPoints.Size(); ++p) 
+					{
+						distPoints[gV1.m_distPoints[p].m_name] = gV1.m_distPoints[p];
+					}
+
+					std::map<long, DPoint>::iterator itDP1;	
+					for(size_t p = 0; p < gV2.m_distPoints.Size(); ++p) 
+					{
+						const DPoint & point =  gV2.m_distPoints[p];
+						itDP1 = distPoints.find(point.m_name);
+						if (itDP1 == distPoints.end())
+						{
+							DPoint newPoint(point.m_name, 0, false, point.m_distOnly);
+							distPoints.insert(std::pair<long, DPoint>(point.m_name, newPoint));
+							if ( !point.m_distOnly )
+							{
+								ch->AddPoint(m_points[point.m_name], point.m_name);
+							}
+						}
+						else
+						{
+							if ( (itDP1->second).m_distOnly && !point.m_distOnly)
+							{
+								(itDP1->second).m_distOnly = false;
+								ch->AddPoint(m_points[point.m_name], point.m_name);
+							}
+						}
+					}
+					gV1.m_distPoints.Clear();
+					gV1.m_distPoints.Resize(distPoints.size());
+					std::map<long, DPoint>::iterator itDP(distPoints.begin());
+					std::map<long, DPoint>::iterator itDPEnd(distPoints.end());
+					for(; itDP != itDPEnd; ++itDP) 
+					{
+						gV1.m_distPoints.PushBack(itDP->second);
+					}
+					ch->SetDistPoints(0);
+					while (ch->Process() == ICHullErrorInconsistent)		// if we face problems when constructing the visual-hull. really ugly!!!!
+					{
+			//			if (m_callBack) (*m_callBack)("\t Problem with convex-hull construction [HACD::ComputeEdgeCost]\n", 0.0, 0.0, 0);
+						ICHull  * chOld = ch;
+						ch = new ICHull(m_heapManager);
+						CircularList<TMMVertex> & verticesCH = chOld->GetMesh().m_vertices;
+						size_t nV = verticesCH.GetSize();
+						long ptIndex = 0;
+						verticesCH.Next();
+						// add noise to avoid the problem
+						ptIndex = verticesCH.GetHead()->GetData().m_name;			
+						ch->AddPoint(m_points[ptIndex]+ m_scale * 0.0001 * Vec3<Real>(rand() % 10 - 5, rand() % 10 - 5, rand() % 10 - 5), ptIndex);
+						for(size_t v = 1; v < nV; ++v)
+						{
+							ptIndex = verticesCH.GetHead()->GetData().m_name;			
+							ch->AddPoint(m_points[ptIndex], ptIndex);
+							verticesCH.Next();
+						}
+						gV1.m_convexHull = ch;
+						delete chOld;
+					}
+
+	#ifdef HACD_DEBUG
+			if (v1 == 90 && v2==98)
+			{
+				const long nPoints = static_cast<long>(m_nPoints);
+				std::map<long, DPoint>::iterator itDP(distPoints.begin());
+				std::map<long, DPoint>::iterator itDPEnd(distPoints.end());
+				for(; itDP != itDPEnd; ++itDP) 
+				{	
+
+					if (itDP->first >= nPoints)
+					{
+						long pt = itDP->first - nPoints;
+						ch->AddPoint(m_extraDistPoints[pt], itDP->first);
+					}
+					else if (itDP->first >= 0)
+					{
+						long pt = itDP->first;
+						ch->AddPoint(m_points[pt], itDP->first);
+					}
+					else
+					{
+						long pt = -itDP->first-1;
+						ch->AddPoint(m_facePoints[pt], itDP->first);
+						ch->AddPoint(m_facePoints[pt] + 10.0 * m_faceNormals[pt] , itDP->first);
+					}
+				}
+				printf("-***->\n");
+
+				ch->m_mesh.Save("debug.wrl");
+			}
+	#endif
+
+	#endif
+					if (m_alpha > 0.0)
+					{
+						std::set<unsigned long long> boudaryEdges1;
+						for(size_t edV1 = 0; edV1 < gV1.m_boudaryEdges.Size(); ++edV1) 
+						{
+							boudaryEdges1.insert(gV1.m_boudaryEdges[edV1]);
+						}
+						std::set<unsigned long long> boudaryEdges2;
+						for(size_t edV2 = 0; edV2 < gV2.m_boudaryEdges.Size(); ++edV2) 
+						{
+							boudaryEdges2.insert(gV2.m_boudaryEdges[edV2]);
+						}                      
+						std::set<unsigned long long> boudaryEdges;
+						std::set_symmetric_difference (boudaryEdges1.begin(), 
+													   boudaryEdges1.end(), 
+													   boudaryEdges2.begin(), 
+													   boudaryEdges2.end(),
+													   std::inserter( boudaryEdges, boudaryEdges.begin() ) );
+						gV1.m_boudaryEdges.Clear();
+						std::set<unsigned long long>::const_iterator itBE(boudaryEdges.begin());
+						std::set<unsigned long long>::const_iterator itBEEnd(boudaryEdges.end());
+						for(; itBE != itBEEnd; ++itBE)
+						{
+							gV1.m_boudaryEdges.Insert(*itBE);
+						}
+					}
+					gV1.m_surf += gV2.m_surf;
+
+	#ifdef HACD_DEBUG				
+					printf("v1 %i v2 %i \n", v1, v2);
+	#endif
+					m_graph.EdgeCollapse(v1, v2);
+					long idEdge;
+					for(size_t itE = 0; itE < m_graph.m_vertices[v1].m_edges.Size(); ++itE)
+					{
+						idEdge = m_graph.m_vertices[v1].m_edges[itE];
+						ComputeEdgeCost(idEdge);
+						m_pqueue.push(GraphEdgePriorityQueue(idEdge, m_graph.m_edges[idEdge].m_error));
+					}
 				}
 			}
-            else
-            {
-                break;
-            }
-        }
-		while (!m_pqueue.empty())
-		{
-			m_pqueue.pop();
+			else
+			{
+				break;
+			}
 		}
-        
         m_cVertices.clear();
 		m_nClusters = m_graph.GetNVertices();
         m_cVertices.reserve(m_nClusters);
@@ -648,7 +880,7 @@ namespace HACD
                 if (m_callBack) 
                 {
                     char msg[1024];
-                    sprintf(msg, "\t CH \t %lu \t %lf \t %lf\n", static_cast<unsigned long>(p), m_graph.m_vertices[v].m_concavity, m_graph.m_vertices[v].m_error);
+                    sprintf(msg, "\t CH(%lu) \t %lu \t %lf \t %lu \t %f \t %lu\n", v, static_cast<unsigned long>(p), m_graph.m_vertices[v].m_concavity, m_graph.m_vertices[v].m_distPoints.Size(),  m_graph.m_vertices[v].m_surf*100.0/m_area, m_graph.m_vertices[v].m_ancestors.size());
 					(*m_callBack)(msg, 0.0, 0.0, m_nClusters);
 					p++;
                 }
@@ -669,7 +901,27 @@ namespace HACD
 		{
 			return false;
 		}
+
+		Vec3<Real> *	pointsOld		= m_points;
+		Vec3<long> *	triangles		= m_triangles;
+		size_t			nTrianglesOld	= m_nTriangles;
+		size_t			PointsOld		= m_nPoints;
+        bool decimatedMeshComputed = false;
+		if (m_targetNTrianglesDecimatedMesh > 0 && m_targetNTrianglesDecimatedMesh < m_nTriangles)
+		{
+            decimatedMeshComputed = true;
+			MeshDecimator myMDecimator;
+			myMDecimator.SetCallBack(m_callBack);
+			myMDecimator.Initialize(m_nPoints, m_nTriangles,m_points, m_triangles);
+			myMDecimator.Decimate(0, m_targetNTrianglesDecimatedMesh);
+			m_nTriangles = myMDecimator.GetNTriangles();
+			m_nPoints = myMDecimator.GetNVertices();
+			m_points    = new Vec3<Real>[m_nPoints];
+			m_triangles = new Vec3<long>[m_nTriangles];
+			myMDecimator.GetMeshData(m_points, m_triangles);
+		}
 		size_t nV = m_nTriangles;
+
 		if (m_callBack)
 		{
 			std::ostringstream msg;
@@ -684,10 +936,10 @@ namespace HACD
 			msg << "\t # vertices per convex-hull     \t" << m_nVerticesPerCH << std::endl;
 			msg << "\t scale                          \t" << m_scale << std::endl;
 			msg << "\t add extra distance points      \t" << m_addExtraDistPoints << std::endl;
-            msg << "\t add neighbours distance points \t" << m_addNeighboursDistPoints << std::endl;
             msg << "\t add face distance points       \t" << m_addFacesPoints << std::endl;
 			msg << "\t produce full convex-hulls      \t" << fullCH << std::endl;	
 			msg << "\t max. distance to connect CCs   \t" << m_ccConnectDist << std::endl;
+			msg << "\t threshold for small clusters   \t" << m_smallClusterThreshold << std::endl;
 			(*m_callBack)(msg.str().c_str(), 0.0, 0.0, nV);
 		}
 		if (m_callBack) (*m_callBack)("+ Normalizing Data\n", 0.0, 0.0, nV);
@@ -718,44 +970,95 @@ namespace HACD
 				m_partition[m_graph.m_vertices[v].m_ancestors[a]] = static_cast<long>(p);
 			}
             // compute the convex-hull
-            const std::map<long, DPoint> & pointsCH =  m_graph.m_vertices[v].m_distPoints;
-            std::map<long, DPoint>::const_iterator itCH(pointsCH.begin());
-            std::map<long, DPoint>::const_iterator itCHEnd(pointsCH.end());
-            for(; itCH != itCHEnd; ++itCH) 
+            for(size_t itCH = 0; itCH < m_graph.m_vertices[v].m_distPoints.Size(); ++itCH) 
             {
-                if (!(itCH->second).m_distOnly)
+				const DPoint & point = m_graph.m_vertices[v].m_distPoints[itCH];
+                if (!point.m_distOnly)
                 {
-                    m_convexHulls[p].AddPoint(m_points[itCH->first], itCH->first);
+                    m_convexHulls[p].AddPoint(m_points[point.m_name], point.m_name);
                 }
             }
-			m_convexHulls[p].SetDistPoints(&m_graph.m_vertices[v].m_distPoints);
+			m_convexHulls[p].SetDistPoints(0); //&m_graph.m_vertices[v].m_distPoints
             if (fullCH)
             {
-	            m_convexHulls[p].Process();
+				while (m_convexHulls[p].Process() == ICHullErrorInconsistent)		// if we face problems when constructing the visual-hull. really ugly!!!!
+				{
+					ICHull * ch = new ICHull(m_heapManager);
+					CircularList<TMMVertex> & verticesCH = m_convexHulls[p].GetMesh().m_vertices;
+					size_t nV = verticesCH.GetSize();
+					long ptIndex = 0;
+					verticesCH.Next();
+					// add noise to avoid the problem
+					ptIndex = verticesCH.GetHead()->GetData().m_name;			
+					ch->AddPoint(m_points[ptIndex]+ m_diag * 0.0001 * Vec3<Real>(rand() % 10 - 5, rand() % 10 - 5, rand() % 10 - 5), ptIndex);
+					for(size_t v = 1; v < nV; ++v)
+					{
+						ptIndex = verticesCH.GetHead()->GetData().m_name;			
+						ch->AddPoint(m_points[ptIndex], ptIndex);
+						verticesCH.Next();
+					}
+					m_convexHulls[p] = (*ch);
+					delete ch;
+				}
             }
             else
             {
-	            m_convexHulls[p].Process(static_cast<unsigned long>(m_nVerticesPerCH));
+				while ( m_convexHulls[p].Process(static_cast<unsigned long>(m_nVerticesPerCH)) == ICHullErrorInconsistent)		// if we face problems when constructing the visual-hull. really ugly!!!!
+				{
+					ICHull * ch = new ICHull(m_heapManager);
+					CircularList<TMMVertex> & verticesCH = m_convexHulls[p].GetMesh().m_vertices;
+					size_t nV = verticesCH.GetSize();
+					long ptIndex = 0;
+					verticesCH.Next();
+					// add noise to avoid the problem
+					ptIndex = verticesCH.GetHead()->GetData().m_name;			
+					ch->AddPoint(m_points[ptIndex]+ m_diag * 0.0001 * Vec3<Real>(rand() % 10 - 5, rand() % 10 - 5, rand() % 10 - 5), ptIndex);
+					for(size_t v = 1; v < nV; ++v)
+					{
+						ptIndex = verticesCH.GetHead()->GetData().m_name;			
+						ch->AddPoint(m_points[ptIndex], ptIndex);
+						verticesCH.Next();
+					}
+					m_convexHulls[p] = (*ch);
+					delete ch;
+				}
             }
+#ifdef HACD_DEBUG
+			if (v==90)
+			{
+				m_convexHulls[p].m_mesh.Save("debug.wrl");
+			}
+#endif 
             if (exportDistPoints)
             {
-                itCH = pointsCH.begin();
-                for(; itCH != itCHEnd; ++itCH) 
-                {
-                    if ((itCH->second).m_distOnly)
+                for(size_t itCH = 0; itCH < m_graph.m_vertices[v].m_distPoints.Size(); ++itCH) 
+				{
+					const DPoint & point = m_graph.m_vertices[v].m_distPoints[itCH];
+                    if (point.m_distOnly)
                     {
-                        if (itCH->first >= 0)
+                        if (point.m_name >= 0)
                         {
-                            m_convexHulls[p].AddPoint(m_points[itCH->first], itCH->first);
+                            m_convexHulls[p].AddPoint(m_points[point.m_name], point.m_name);
                         }
                         else
                         {
-                            m_convexHulls[p].AddPoint(m_facePoints[-itCH->first-1], itCH->first);
+                            m_convexHulls[p].AddPoint(m_facePoints[-point.m_name-1], point.m_name);
                         }
                     }
                 }
             }
-		}       
+		}
+		if (decimatedMeshComputed)
+		{
+            m_trianglesDecimated  = m_triangles;
+            m_pointsDecimated     = m_points;
+            m_nTrianglesDecimated = m_nTriangles;
+            m_nPointsDecimated    = m_nPoints;
+			m_points	 = pointsOld;
+			m_triangles	 = triangles;
+			m_nTriangles = nTrianglesOld;
+			m_nPoints	 = PointsOld;
+		}
         return true;
     }
     

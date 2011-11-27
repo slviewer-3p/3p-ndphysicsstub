@@ -16,7 +16,15 @@ namespace HACD
 		{
 			CircularListElement<T> * next = element->GetNext();
 			CircularListElement<T> * prev = element->GetPrev();
-			delete element;
+            if (m_heapManager)
+            {
+				element->~CircularListElement<T>();
+                heap_free(m_heapManager, element);
+            }
+            else
+            {
+			    delete element;
+            }
 			m_size--;
             if (element == m_head)
             {
@@ -28,7 +36,15 @@ namespace HACD
 		}
 		else if (m_size == 1)
 		{
-			delete m_head;
+            if (m_heapManager)
+            {
+				element->~CircularListElement<T>();
+                heap_free(m_heapManager, m_head);
+            }
+            else
+            {
+			    delete m_head;
+            }
 			m_size--;
 			m_head = 0;
 			return true;
@@ -46,7 +62,15 @@ namespace HACD
 		{
 			CircularListElement<T> * next = m_head->GetNext();
 			CircularListElement<T> * prev = m_head->GetPrev();
-			delete m_head;
+            if (m_heapManager)
+            {
+				m_head->~CircularListElement<T>();
+                heap_free(m_heapManager, m_head);
+            }
+            else
+            {
+			    delete m_head;
+            }
 			m_size--;
 			m_head = next;
 			next->GetPrev() = prev;
@@ -55,8 +79,16 @@ namespace HACD
 		}
 		else if (m_size == 1)
 		{
-			delete m_head;
-			m_size--;
+            if (m_heapManager)
+            {
+				m_head->~CircularListElement<T>();
+                heap_free(m_heapManager, m_head);
+            }
+            else
+            {
+			    delete m_head;
+            }
+            m_size--;
 			m_head = 0;
 			return true;
 		}
@@ -72,11 +104,28 @@ namespace HACD
 		{
 			if (data)
 			{
-				m_head = new CircularListElement<T>(*data);
+                if (m_heapManager)
+                {
+                    m_head = static_cast< CircularListElement<T> * > (heap_malloc(m_heapManager, sizeof(CircularListElement<T>)));
+                    m_head->GetData().Initialize();
+                    m_head->GetData() = (*data);
+                }
+                else
+                {
+				    m_head = new CircularListElement<T>(*data);
+                }
 			}
 			else
 			{
-				m_head = new CircularListElement<T>();
+                if (m_heapManager)
+                {
+                    m_head = static_cast< CircularListElement<T> * > (heap_malloc(m_heapManager, sizeof(CircularListElement<T>)));
+                    m_head->GetData().Initialize();
+                }
+                else
+                {
+    				m_head = new CircularListElement<T>();
+                }
 			}
 			m_head->GetNext() = m_head->GetPrev() = m_head;
 		}
@@ -86,11 +135,28 @@ namespace HACD
 			CircularListElement<T> * element = m_head;
 			if (data)
 			{
-				m_head = new CircularListElement<T>(*data);
+                if (m_heapManager)
+                {
+                    m_head = static_cast< CircularListElement<T> * > (heap_malloc(m_heapManager, sizeof(CircularListElement<T>)));
+                    m_head->GetData().Initialize();
+                    m_head->GetData() = (*data);
+                }
+                else
+                {
+				    m_head = new CircularListElement<T>(*data);
+                }
 			}
 			else
 			{
-				m_head = new CircularListElement<T>;
+                if (m_heapManager)
+                {
+                    m_head = static_cast< CircularListElement<T> * > (heap_malloc(m_heapManager, sizeof(CircularListElement<T>)));
+                    m_head->GetData().Initialize();
+                }
+                else
+                {
+    				m_head = new CircularListElement<T>();
+                }
 			}
 			m_head->GetNext() = next;
 			m_head->GetPrev() = element;
@@ -146,6 +212,7 @@ namespace HACD
         if (&rhs != this)
         {
             Clear();
+            m_heapManager = rhs.m_heapManager;
             if (rhs.m_size > 0)
             {
                 CircularListElement<T> * current = rhs.m_head;

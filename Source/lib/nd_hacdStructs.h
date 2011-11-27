@@ -52,6 +52,15 @@ struct DecompData
 	void clear();
 };
 
+namespace HACD
+{
+    class ICallback
+    {
+    public:
+		virtual void operator()( char const *aMsg, double aProgress, double aConcavity, size_t aVertices) = 0;
+    };
+}
+
 struct HACDDecoder: public HACD::ICallback
 {
 	std::vector< tVecDbl > mVertices;

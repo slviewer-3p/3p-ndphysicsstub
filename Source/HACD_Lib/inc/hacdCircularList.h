@@ -17,6 +17,7 @@
 #define HACD_CIRCULAR_LIST_H
 #include<stdlib.h>
 #include<hacdVersion.h>
+#include <hacdMicroAllocator.h>
 namespace HACD
 {
 	//!	CircularListElement class.
@@ -47,6 +48,8 @@ namespace HACD
 	template < typename T > class CircularList
 	{
 	public:
+        HeapManager * const     				GetHeapManager() const { return m_heapManager;}
+		void									SetHeapManager(HeapManager * const heapManager) { m_heapManager = heapManager;}
         CircularListElement<T> *  &             GetHead() { return m_head;}        
 		const CircularListElement<T> *          GetHead() const { return m_head;}
 		bool                                    IsEmpty() const { return (m_size == 0);}
@@ -62,10 +65,11 @@ namespace HACD
 		void									Clear() { while(Delete());};
         const CircularList&						operator=(const CircularList& rhs);
 		//!	Constructor											
-												CircularList()
+												CircularList(HeapManager * heapManager)
 												{ 
 													m_head = 0; 
 													m_size = 0;
+                                                    m_heapManager = heapManager;
 												}
 												CircularList(const CircularList& rhs);
 		//! Destructor
@@ -73,6 +77,7 @@ namespace HACD
 	private:
 		CircularListElement<T> *				m_head;		//!< a pointer to the head of the circular list
 		size_t									m_size;		//!< number of element in the circular list
+        HeapManager *                           m_heapManager;
         
 	};
 }

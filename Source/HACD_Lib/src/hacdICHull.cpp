@@ -16,12 +16,13 @@
 #include <limits>
 namespace HACD
 {   
-	const long ICHull::sc_dummyIndex = std::numeric_limits<long>::max();
-	ICHull::ICHull(void)
+	const double ICHull::sc_eps = 0.000000001;
+	const long   ICHull::sc_dummyIndex = std::numeric_limits<long>::max();
+	ICHull::ICHull(HeapManager * const heapManager): m_mesh(heapManager)
     {
 		m_distPoints = 0;
 		m_isFlat = false;
-		m_dummyVertex = 0;
+        m_heapManager = heapManager;        
     }
 	bool ICHull::AddPoints(const Vec3<Real> * points, size_t nPoints)
 	{
@@ -126,6 +127,17 @@ namespace HACD
 	            vertices.Next();
 				if (!GetMesh().CheckConsistancy())
 				{
+					size_t nV = m_mesh.GetNVertices();
+					CircularList<TMMVertex> & vertices = m_mesh.GetVertices();
+					for(size_t v = 0; v < nV; ++v)
+					{
+						if (vertices.GetData().m_name == sc_dummyIndex)
+						{
+							vertices.Delete();
+							break;
+						}
+                        vertices.Next();
+					}
 					return ICHullErrorInconsistent;
 				}
             }
@@ -170,14 +182,19 @@ namespace HACD
 				}
 				m_mesh.m_edges.Next();
 			}
-			m_mesh.m_vertices.Delete(m_dummyVertex);
-			m_dummyVertex = 0;
             size_t nV = m_mesh.GetNVertices();
             CircularList<TMMVertex> & vertices = m_mesh.GetVertices();
 			for(size_t v = 0; v < nV; ++v)
 			{
-                vertices.GetData().m_tag = false;
-                vertices.Next();
+				if (vertices.GetData().m_name == sc_dummyIndex)
+				{
+					vertices.Delete();
+				}
+				else
+				{
+					vertices.GetData().m_tag = false;
+					vertices.Next();
+				}
             }
             CleanEdges();
 			CleanTriangles();
@@ -255,6 +272,17 @@ namespace HACD
                 CleanUp(addedPoints);
 				if (!GetMesh().CheckConsistancy())
 				{
+					size_t nV = m_mesh.GetNVertices();
+					CircularList<TMMVertex> & vertices = m_mesh.GetVertices();
+					for(size_t v = 0; v < nV; ++v)
+					{
+						if (vertices.GetData().m_name == sc_dummyIndex)
+						{
+							vertices.Delete();
+							break;
+						}
+                        vertices.Next();
+					}
 					return ICHullErrorInconsistent;
 				}
                 vertices.Next();
@@ -305,14 +333,19 @@ namespace HACD
 				}
 				m_mesh.m_edges.Next();
 			}
-			m_mesh.m_vertices.Delete(m_dummyVertex);
-			m_dummyVertex = 0;
             size_t nV = m_mesh.GetNVertices();
             CircularList<TMMVertex> & vertices = m_mesh.GetVertices();
 			for(size_t v = 0; v < nV; ++v)
 			{
-                vertices.GetData().m_tag = false;
-                vertices.Next();
+				if (vertices.GetData().m_name == sc_dummyIndex)
+				{
+					vertices.Delete();
+				}
+				else
+				{
+					vertices.GetData().m_tag = false;
+					vertices.Next();
+				}
             }
             CleanEdges();
 			CleanTriangles();
@@ -398,12 +431,12 @@ namespace HACD
         vertices.GetHead() = v3;
 
 		double vol = Volume(v0->GetData().m_pos, v1->GetData().m_pos, v2->GetData().m_pos, v3->GetData().m_pos);
-		while (vol == 0.0 && !v3->GetNext()->GetData().m_tag)
+		while (fabs(vol) < sc_eps && !v3->GetNext()->GetData().m_tag)
 		{
 			v3 = v3->GetNext();
 			vol = Volume(v0->GetData().m_pos, v1->GetData().m_pos, v2->GetData().m_pos, v3->GetData().m_pos);
 		}			
-		if (vol == 0.0)
+		if (fabs(vol) < sc_eps)
 		{
 			// compute the barycenter
 			Vec3<Real> bary(0.0,0.0,0.0);
@@ -425,10 +458,8 @@ namespace HACD
 			vertices.GetHead() = v2;
 			Vec3<Real> newPt = bary + m_normal;
 			AddPoint(newPt, sc_dummyIndex); 
-			m_dummyVertex = vertices.GetHead();
 			m_isFlat = true;
             v3 = v2->GetNext();
-            vol = Volume(v0->GetData().m_pos, v1->GetData().m_pos, v2->GetData().m_pos, v3->GetData().m_pos);
 			return ICHullErrorOK;
 		}
 		else if (v3 != vertices.GetHead())
@@ -522,7 +553,7 @@ namespace HACD
 										 vertex0->GetData().m_pos.Z());
         double vol = 0.0;
         totalVolume = 0.0;
-		Vec3<double> ver0, ver1, ver2;
+		Vec3<double> ver0, ver1, ver2;		
         do 
         {
 			ver0.X() = f->GetData().m_vertices[0]->GetData().m_pos.X();
@@ -535,7 +566,7 @@ namespace HACD
 			ver2.Y() = f->GetData().m_vertices[2]->GetData().m_pos.Y();
 			ver2.Z() = f->GetData().m_vertices[2]->GetData().m_pos.Z();
 			vol = Volume(ver0, ver1, ver2, pos0);
-			if ( vol < 0.0 )
+			if ( vol < -sc_eps)
 			{
 				vol = fabs(vol);
 				totalVolume += vol;
@@ -699,12 +730,11 @@ namespace HACD
 				}
 				else
 				{
-					std::set<long>::const_iterator itPEnd((*it)->GetData().m_incidentPoints.end());
-					std::set<long>::const_iterator itP((*it)->GetData().m_incidentPoints.begin());
+					const SArray<long, SARRAY_DEFAULT_MIN_SIZE> & incidentPoints = (*it)->GetData().m_incidentPoints;
 					std::map<long, DPoint>::iterator itPoint;
-					for(; itP != itPEnd; ++itP) 
+					for(size_t itP = 0; itP < (*it)->GetData().m_incidentPoints.Size(); ++itP) 
 					{
-						itPoint = m_distPoints->find(*itP);
+						itPoint = m_distPoints->find(incidentPoints[itP]);
 						if (itPoint != m_distPoints->end())
 						{
 							itPoint->second.m_computed = false;
@@ -770,9 +800,33 @@ namespace HACD
             m_edgesToUpdate = rhs.m_edgesToUpdate;
             m_trianglesToDelete = rhs.m_trianglesToDelete;
 			m_isFlat = rhs.m_isFlat;
+            m_heapManager = rhs.m_heapManager;
         }
         return (*this);
     }   
+    double ICHull::ComputeArea()
+    {
+		size_t nT = m_mesh.GetNTriangles();
+		Vec3<double> ver0, ver1, ver2, normal;
+		double surfCH = 0.0;
+		for(size_t f = 0; f < nT; f++)
+		{
+			TMMTriangle & currentTriangle = m_mesh.m_triangles.GetHead()->GetData();
+			ver0.X() = currentTriangle.m_vertices[0]->GetData().m_pos.X();
+			ver0.Y() = currentTriangle.m_vertices[0]->GetData().m_pos.Y();
+			ver0.Z() = currentTriangle.m_vertices[0]->GetData().m_pos.Z();
+			ver1.X() = currentTriangle.m_vertices[1]->GetData().m_pos.X();
+			ver1.Y() = currentTriangle.m_vertices[1]->GetData().m_pos.Y();
+			ver1.Z() = currentTriangle.m_vertices[1]->GetData().m_pos.Z();
+			ver2.X() = currentTriangle.m_vertices[2]->GetData().m_pos.X();
+			ver2.Y() = currentTriangle.m_vertices[2]->GetData().m_pos.Y();
+			ver2.Z() = currentTriangle.m_vertices[2]->GetData().m_pos.Z();
+            normal = (ver1-ver0) ^ (ver2-ver0);
+			surfCH += normal.GetNorm();
+			m_mesh.m_triangles.Next();
+		}
+		return surfCH;
+	}
     double ICHull::ComputeVolume()
     {
         size_t nV = m_mesh.m_vertices.GetSize();
@@ -809,7 +863,7 @@ namespace HACD
         }
         return totalVolume;
     }
-    bool ICHull::IsInside(const Vec3<Real> & pt0)
+    bool ICHull::IsInside(const Vec3<Real> & pt0, const double eps)
     {
 		const Vec3<double> pt(pt0.X(), pt0.Y(), pt0.Z());
 		if (m_isFlat)
@@ -845,6 +899,7 @@ namespace HACD
 		{
 			size_t nT = m_mesh.m_triangles.GetSize();
 			Vec3<double> ver0, ver1, ver2;
+			double vol;
 			for(size_t t = 0; t < nT; t++)
 			{
 				ver0.X() = m_mesh.m_triangles.GetHead()->GetData().m_vertices[0]->GetData().m_pos.X();
@@ -856,7 +911,8 @@ namespace HACD
 				ver2.X() = m_mesh.m_triangles.GetHead()->GetData().m_vertices[2]->GetData().m_pos.X();
 				ver2.Y() = m_mesh.m_triangles.GetHead()->GetData().m_vertices[2]->GetData().m_pos.Y();
 				ver2.Z() = m_mesh.m_triangles.GetHead()->GetData().m_vertices[2]->GetData().m_pos.Z();
-				if (Volume(ver0, ver1, ver2, pt) < 0.0)
+				vol = Volume(ver0, ver1, ver2, pt);
+				if ( vol < eps)
 				{
 					return false;
 				}
@@ -867,82 +923,19 @@ namespace HACD
     }
 	double ICHull::ComputeDistance(long name, const Vec3<Real> & pt, const Vec3<Real> & normal, bool & insideHull, bool updateIncidentPoints)
 	{
-		Vec3<double> ptNormal(static_cast<double>(normal.X()), 
-							  static_cast<double>(normal.Y()), 
-							  static_cast<double>(normal.Z()));
-		Vec3<double> p0( static_cast<double>(pt.X()), 
-						 static_cast<double>(pt.Y()), 
-						 static_cast<double>(pt.Z()));
-
 		if (m_isFlat)
 		{
-			double distance = 0.0;
-			Vec3<double> chNormal(static_cast<double>(m_normal.X()), 
-								  static_cast<double>(m_normal.Y()), 
-							      static_cast<double>(m_normal.Z()));
-			ptNormal -= (ptNormal * chNormal) * chNormal;
-			if (ptNormal.GetNorm() > 0.0)
-			{
-				ptNormal.Normalize();
-				long nameVE1;
-				long nameVE2;
-				Vec3<double> pa, pb, d0, d1, d2, d3;				
-				Vec3<double> p1 = p0 + ptNormal;
-				Vec3<double> p2, p3;
-				double mua, mub, s;
-				const double EPS = 0.00000000001;
-				size_t nE = m_mesh.GetNEdges();
-				for(size_t e = 0; e < nE; e++)
-				{
-					TMMEdge & currentEdge = m_mesh.m_edges.GetHead()->GetData();
-                    nameVE1 = currentEdge.m_vertices[0]->GetData().m_name;
-                    nameVE2 = currentEdge.m_vertices[1]->GetData().m_name;
-                    if (currentEdge.m_triangles[0] == 0 || currentEdge.m_triangles[1] == 0)
-                    {
-                        if ( nameVE1==name || nameVE2==name )
-                        {
-                            return 0.0;
-                        }
-                        /*
-                        if (debug) std::cout << "V" << name 
-                                             << " E "  << nameVE1 << " " << nameVE2 << std::endl;
-                         */
-
-                        p2.X() = currentEdge.m_vertices[0]->GetData().m_pos.X();
-                        p2.Y() = currentEdge.m_vertices[0]->GetData().m_pos.Y();
-                        p2.Z() = currentEdge.m_vertices[0]->GetData().m_pos.Z();
-                        p3.X() = currentEdge.m_vertices[1]->GetData().m_pos.X();
-                        p3.Y() = currentEdge.m_vertices[1]->GetData().m_pos.Y();
-                        p3.Z() = currentEdge.m_vertices[1]->GetData().m_pos.Z();
-                        d0 = p3 - p2;
-                        if (d0.GetNorm() > 0.0)
-                        {
-                            if (IntersectLineLine(p0, p1, p2, p3, pa, pb, mua, mub))
-                            {
-                                d1 = pa - p2;
-                                d2 = pa - pb;
-                                d3 = pa - p0;
-                                mua = d1.GetNorm()/d0.GetNorm();
-                                mub = d1*d0;
-                                s = d3*ptNormal;
-                                if (d2.GetNorm() < EPS &&  mua <= 1.0 && mub>=0.0 && s>0.0)
-                                {
-                                    distance = std::max<double>(distance, d3.GetNorm());
-                                }
-                            }
-                        }
-                    }
-					m_mesh.m_edges.Next();
-				}
-			}
-			return distance;
+			return  0.0;
 		}
 		else
 		{
+			Vec3<double> p0( static_cast<double>(pt.X()), 
+							 static_cast<double>(pt.Y()), 
+							 static_cast<double>(pt.Z()));
+
 			Vec3<double> ptNormal(static_cast<double>(normal.X()), 
 								  static_cast<double>(normal.Y()), 
 								  static_cast<double>(normal.Z()));
-
 			Vec3<double> impact;
 			long nhit;
 			double dist;
@@ -954,46 +947,47 @@ namespace HACD
 			for(size_t f = 0; f < nT; f++)
 			{
 				TMMTriangle & currentTriangle = m_mesh.m_triangles.GetHead()->GetData();
-	/*
-				if (debug) std::cout << "T " << currentTriangle.m_vertices[0]->GetData().m_name << " "
-														  << currentTriangle.m_vertices[1]->GetData().m_name << " "
-														  << currentTriangle.m_vertices[2]->GetData().m_name << std::endl;
-     */
-				if (currentTriangle.m_vertices[0]->GetData().m_name == name ||
-					currentTriangle.m_vertices[1]->GetData().m_name == name ||
-					currentTriangle.m_vertices[2]->GetData().m_name == name)
+                nhit = 0;
+				if (currentTriangle.m_vertices[0]->GetData().m_name != currentTriangle.m_vertices[1]->GetData().m_name &&
+					currentTriangle.m_vertices[1]->GetData().m_name != currentTriangle.m_vertices[2]->GetData().m_name &&
+					currentTriangle.m_vertices[2]->GetData().m_name != currentTriangle.m_vertices[0]->GetData().m_name)
 				{
-					nhit = 1;
-					dist = 0.0;
-				}
-				else
-				{
-					ver0.X() = currentTriangle.m_vertices[0]->GetData().m_pos.X();
-					ver0.Y() = currentTriangle.m_vertices[0]->GetData().m_pos.Y();
-					ver0.Z() = currentTriangle.m_vertices[0]->GetData().m_pos.Z();
-					ver1.X() = currentTriangle.m_vertices[1]->GetData().m_pos.X();
-					ver1.Y() = currentTriangle.m_vertices[1]->GetData().m_pos.Y();
-					ver1.Z() = currentTriangle.m_vertices[1]->GetData().m_pos.Z();
-					ver2.X() = currentTriangle.m_vertices[2]->GetData().m_pos.X();
-					ver2.Y() = currentTriangle.m_vertices[2]->GetData().m_pos.Y();
-					ver2.Z() = currentTriangle.m_vertices[2]->GetData().m_pos.Z();
-					nhit = IntersectRayTriangle(p0, ptNormal, ver0, ver1, ver2, dist);
-				}
-
-				if (nhit == 1 && distance <= dist)
-				{
-					distance = dist;
-					insideHull = true;
-					face = m_mesh.m_triangles.GetHead();	
-/*
-					std::cout << name << " -> T " << currentTriangle.m_vertices[0]->GetData().m_name << " "
-												  << currentTriangle.m_vertices[1]->GetData().m_name << " "
-												  << currentTriangle.m_vertices[2]->GetData().m_name << " Dist "
-												  << dist << " P " << currentTriangle.m_normal * normal << std::endl;
-*/
-					if (dist > 0.1)
+					if (currentTriangle.m_vertices[0]->GetData().m_name == name ||
+						currentTriangle.m_vertices[1]->GetData().m_name == name ||
+						currentTriangle.m_vertices[2]->GetData().m_name == name)
 					{
-						break;
+						nhit = 1;
+						dist = 0.0;
+					}
+					else
+					{
+						ver0.X() = currentTriangle.m_vertices[0]->GetData().m_pos.X();
+						ver0.Y() = currentTriangle.m_vertices[0]->GetData().m_pos.Y();
+						ver0.Z() = currentTriangle.m_vertices[0]->GetData().m_pos.Z();
+						ver1.X() = currentTriangle.m_vertices[1]->GetData().m_pos.X();
+						ver1.Y() = currentTriangle.m_vertices[1]->GetData().m_pos.Y();
+						ver1.Z() = currentTriangle.m_vertices[1]->GetData().m_pos.Z();
+						ver2.X() = currentTriangle.m_vertices[2]->GetData().m_pos.X();
+						ver2.Y() = currentTriangle.m_vertices[2]->GetData().m_pos.Y();
+						ver2.Z() = currentTriangle.m_vertices[2]->GetData().m_pos.Z();
+						Vec3<Real> faceNormal = (ver1-ver0) ^ (ver2-ver0);
+						faceNormal.Normalize();
+						if (ptNormal*normal > 0.0)
+						{
+							nhit = IntersectRayTriangle(p0, ptNormal, ver0, ver1, ver2, dist);
+						}                        
+					}
+#ifdef HACD_DEBUG
+					std::cout << "T " << currentTriangle.m_vertices[0]->GetData().m_name << " "
+									  << currentTriangle.m_vertices[1]->GetData().m_name << " "
+									  << currentTriangle.m_vertices[2]->GetData().m_name << " "
+									  << nhit << " " << dist << std::endl;
+#endif
+					if (nhit == 1 && (!insideHull || dist > distance) )
+					{
+						distance = dist;
+						insideHull = true;
+						face = m_mesh.m_triangles.GetHead();
 					}
 				}
 				m_mesh.m_triangles.Next();
@@ -1001,7 +995,7 @@ namespace HACD
 			if (updateIncidentPoints && face && m_distPoints)
 			{
 				(*m_distPoints)[name].m_dist = static_cast<Real>(distance);
-				face->GetData().m_incidentPoints.insert(name);
+				face->GetData().m_incidentPoints.Insert(name);
 			}
 			return distance;
 		}

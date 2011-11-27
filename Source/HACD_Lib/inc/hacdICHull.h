@@ -20,6 +20,8 @@
 #include <hacdVector.h>
 #include <vector>
 #include <map>
+#include <hacdMicroAllocator.h>
+
 namespace HACD
 {
 	class DPoint;
@@ -36,6 +38,15 @@ namespace HACD
 	class ICHull
 	{
 		public:
+			static const double									sc_eps;
+			//! 
+            HeapManager * const     							GetHeapManager() const { return m_heapManager;}
+			//!
+			void												SetHeapManager(HeapManager * const heapManager)
+                                                                { 
+                                                                    m_heapManager = heapManager;
+                                                                    m_mesh.SetHeapManager(m_heapManager);
+                                                                }
 			//!
 			bool												IsFlat() { return m_isFlat;}
 			//! 
@@ -57,15 +68,17 @@ namespace HACD
             ICHullError                                         Process(unsigned long nPointsCH);
             //!
             double                                              ComputeVolume();
+			//!
+			double												ComputeArea();
             //!
-            bool                                                IsInside(const Vec3<Real> & pt0);
+            bool                                                IsInside(const Vec3<Real> & pt0, const double eps = 0.0);
 			//!
 			double												ComputeDistance(long name, const Vec3<Real> & pt, const Vec3<Real> & normal, bool & insideHull, bool updateIncidentPoints);
             //!
             const ICHull &                                      operator=(ICHull & rhs);        
 
 			//!	Constructor
-																ICHull(void);
+																ICHull(HeapManager * const heapManager=0);
 			//! Destructor
 			virtual                                             ~ICHull(void) {};
 
@@ -106,10 +119,10 @@ namespace HACD
             std::vector<CircularListElement<TMMEdge> *>         m_edgesToUpdate;
             std::vector<CircularListElement<TMMTriangle> *>     m_trianglesToDelete; 
 			std::map<long, DPoint> *							m_distPoints;            
-			CircularListElement<TMMVertex> *					m_dummyVertex;
+//			CircularListElement<TMMVertex> *					m_dummyVertex;
 			Vec3<Real>                                          m_normal;
 			bool												m_isFlat;
-        
+            HeapManager *                                       m_heapManager;
 					                                           
 																ICHull(const ICHull & rhs);
         

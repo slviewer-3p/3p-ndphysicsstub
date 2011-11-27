@@ -35,7 +35,9 @@ All rights reserved.
 #include <hacdVersion.h>
 #include <hacdCircularList.h>
 #include <hacdVector.h>
+#include <hacdSArray.h>
 #include <set>
+#include <hacdMicroAllocator.h>
 namespace HACD
 {
 	class TMMTriangle;
@@ -47,12 +49,14 @@ namespace HACD
     class DPoint  
     {
     public:       
-																DPoint(Real dist=0, bool computed=false, bool distOnly=false)
-																	:m_dist(dist),
+																DPoint(long name=0, Real dist=0, bool computed=false, bool distOnly=false)
+																	:m_name(name),
+																	 m_dist(dist),
 																	 m_computed(computed),
                                                                      m_distOnly(distOnly){};
                                                 				~DPoint(){};      
     private:
+		long													m_name;
 		Real                                                    m_dist;
 		bool													m_computed;
         bool                                                    m_distOnly;
@@ -69,11 +73,12 @@ namespace HACD
 	class TMMVertex
 	{
 		public:
+            void                                                Initialize();                                                    
 																TMMVertex(void);
                                                                 ~TMMVertex(void);
         
         private:
-			Vec3<Real>										m_pos;
+			Vec3<Real>											m_pos;
 			long												m_name;
             size_t												m_id;
 			CircularListElement<TMMEdge> *						m_duplicate;		// pointer to incident cone edge (or NULL)
@@ -92,6 +97,7 @@ namespace HACD
 	class TMMEdge
 	{		
 		public:
+            void                                                Initialize(); 
 																TMMEdge(void);
 																~TMMEdge(void);
         private:
@@ -114,13 +120,14 @@ namespace HACD
 	class TMMTriangle
 	{
 		public:
+            void                                                Initialize(); 
 																TMMTriangle(void);
 																~TMMTriangle(void);
         private:
             size_t												m_id;
 			CircularListElement<TMMEdge> *						m_edges[3];
 			CircularListElement<TMMVertex> *					m_vertices[3];
-			std::set<long>										m_incidentPoints;
+			SArray<long, SARRAY_DEFAULT_MIN_SIZE>				m_incidentPoints;
 			bool												m_visible;
 																
 																TMMTriangle(const TMMTriangle & rhs);
@@ -153,7 +160,16 @@ namespace HACD
 	class TMMesh
 	{
 		public:
-
+			//! 
+            HeapManager * const     							GetHeapManager() const { return m_heapManager;}
+			//!
+			void												SetHeapManager(HeapManager * const heapManager)
+                                                                { 
+                                                                    m_heapManager = heapManager;
+                                                                    m_vertices.SetHeapManager(m_heapManager);
+                                                                    m_edges.SetHeapManager(m_heapManager);
+                                                                    m_triangles.SetHeapManager(m_heapManager);
+                                                                }
 			//! Returns the number of vertices>
 			inline size_t										GetNVertices() const { return m_vertices.GetSize();}
 			//! Returns the number of edges
@@ -199,7 +215,7 @@ namespace HACD
 			//!
 			bool												Denormalize();
             //!	Constructor
-																TMMesh(void);
+																TMMesh(HeapManager * const heapManager);
 			//! Destructor
 			virtual												~TMMesh(void);
 
@@ -209,6 +225,7 @@ namespace HACD
 			CircularList<TMMTriangle>							m_triangles;
 			Real                                                m_diag;						//>! length of the BB diagonal
 			Vec3<Real>                                          m_barycenter;				//>! barycenter of the mesh
+            HeapManager *                                       m_heapManager;
 
 			// not defined
 																TMMesh(const TMMesh & rhs);

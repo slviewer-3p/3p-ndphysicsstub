@@ -26,6 +26,8 @@ namespace HACD
 	template < typename T > class Vec3
 	{
 	public:
+		T &					operator[](size_t i) { return m_data[i];}
+		const T	&			operator[](size_t i) const { return m_data[i];}
 		T &					X();
 		T &					Y();
 		T &					Z();
