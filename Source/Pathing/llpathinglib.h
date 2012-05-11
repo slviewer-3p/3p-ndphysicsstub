@@ -126,6 +126,7 @@ public:
 		NavMeshColor mStarValid;
 		NavMeshColor mStarInvalid;
 		NavMeshColor mTestPath;
+		NavMeshColor mWaterColor;
 	};
 
 	static void initSystem();
