@@ -150,6 +150,8 @@ public:
 
 	void setNavMeshColors( NavMeshColors const& );
 	void setNavMeshMaterialType( LLPLCharacterType );
+
+	void renderSimpleShapes( LLRender&, float );
 };
 
 #endif

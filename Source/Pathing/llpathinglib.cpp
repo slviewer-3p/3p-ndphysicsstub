@@ -62,3 +62,7 @@ void LLPathingLib::renderNavMeshEdges()
 void LLPathingLib::renderPathBookend( LLRender&, LLPLRenderType )
 {
 }
+
+void LLPathingLib::renderSimpleShapes( LLRender&, float )
+{
+}
