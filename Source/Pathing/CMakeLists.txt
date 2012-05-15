@@ -11,5 +11,5 @@ file (GLOB INCLUDE_FILES *.h )
 
 add_library(nd_Pathing STATIC ${SOURCE_FILES} ${INCLUDE_FILES} )
 
-install( TARGETS nd_Pathing DESTINATION lib/ )
+install( TARGETS nd_Pathing DESTINATION lib/release )
 install( FILES ${INCLUDE_FILES} DESTINATION include/ )

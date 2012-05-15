@@ -9,6 +9,6 @@ file(GLOB HEADER_FILES *.h)
 
 add_library( nd_hacdConvexDecomposition STATIC ${SOURCE_FILES} ${HEADER_FILES})
 
-install( TARGETS nd_hacdConvexDecomposition DESTINATION lib )
+install( TARGETS nd_hacdConvexDecomposition DESTINATION lib/release )
 install( FILES LLConvexDecomposition.h RENAME llconvexdecomposition.h DESTINATION include )
 install( FILES ndConvexDecomposition.h DESTINATION include )
