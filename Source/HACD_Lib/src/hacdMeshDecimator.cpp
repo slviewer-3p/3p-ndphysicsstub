@@ -4,7 +4,7 @@
 #include <algorithm>
 #include <vector>
 #include <hacdMeshDecimator.h>
-#define _CRT_SECURE_NO_WARNINGS
+
 namespace HACD
 {
 	MeshDecimator::MeshDecimator(void)
