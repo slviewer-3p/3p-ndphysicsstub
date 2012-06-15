@@ -67,10 +67,18 @@ void LLPathingLib::renderSimpleShapes( LLRender&, float )
 {
 }
 
-void LLPathingLib::createPhysicsCapsuleRep( LLVector3 const&, float, bool, LLVector3 const, LLUUID const& )
+void LLPathingLib::createPhysicsCapsuleRep( float, float, bool, LLVector3 const, LLUUID const& )
 {
 }
 
 void LLPathingLib::cleanupPhysicsCapsuleRepResiduals()
+{
+}
+
+void LLPathingLib::processNavMeshData()
+{
+}
+
+void LLPathingLib::renderSimpleShapeCapsuleID( LLRender&, LLUUID const&, LLVector3 const& )
 {
 }
