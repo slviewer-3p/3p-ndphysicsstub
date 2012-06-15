@@ -19,6 +19,14 @@ public:
 };
 #endif
 
+#ifndef LL_LLUUID_H
+class LLUUID
+{
+public:
+	unsigned char mData[16];
+};
+#endif
+
 class LLRender;
 
 class LLPathingLib
@@ -152,6 +160,8 @@ public:
 	void setNavMeshMaterialType( LLPLCharacterType );
 
 	void renderSimpleShapes( LLRender&, float );
+
+	void createPhysicsCapsuleRep( LLVector3 const&, float, bool, LLVector3 const, LLUUID const& );
 };
 
 #endif
