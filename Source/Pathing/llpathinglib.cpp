@@ -70,3 +70,7 @@ void LLPathingLib::renderSimpleShapes( LLRender&, float )
 void LLPathingLib::createPhysicsCapsuleRep( LLVector3 const&, float, bool, LLVector3 const, LLUUID const& )
 {
 }
+
+void LLPathingLib::cleanupPhysicsCapsuleRepResiduals()
+{
+}

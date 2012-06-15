@@ -162,6 +162,7 @@ public:
 	void renderSimpleShapes( LLRender&, float );
 
 	void createPhysicsCapsuleRep( LLVector3 const&, float, bool, LLVector3 const, LLUUID const& );
+	void cleanupPhysicsCapsuleRepResiduals();
 };
 
 #endif
