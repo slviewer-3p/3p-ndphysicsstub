@@ -27,6 +27,14 @@ public:
 };
 #endif
 
+#ifndef LLQUATERNION_H
+class LLQuaternion
+{
+public:
+	double mQ[4];
+};
+#endif
+
 class LLRender;
 
 class LLPathingLib
@@ -165,7 +173,7 @@ public:
 	void cleanupPhysicsCapsuleRepResiduals();
 
 	void processNavMeshData();
-	void renderSimpleShapeCapsuleID( LLRender&, LLUUID const&, LLVector3 const& );
+	void renderSimpleShapeCapsuleID( LLRender&, LLUUID const&, LLVector3 const&, LLQuaternion const& );
 };
 
 #endif

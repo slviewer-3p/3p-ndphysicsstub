@@ -79,6 +79,6 @@ void LLPathingLib::processNavMeshData()
 {
 }
 
-void LLPathingLib::renderSimpleShapeCapsuleID( LLRender&, LLUUID const&, LLVector3 const& )
+void LLPathingLib::renderSimpleShapeCapsuleID( LLRender&, LLUUID const&, LLVector3 const&, LLQuaternion const& )
 {
 }
