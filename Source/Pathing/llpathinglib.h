@@ -146,6 +146,7 @@ public:
 	};
 
 	static void initSystem();
+	static void quitSystem();
 	static LLPathingLib* getInstance();
 
 	void extractNavMeshSrcFromLLSD( std::vector< unsigned char> const &aMeshData, int aNavigation );
@@ -169,7 +170,7 @@ public:
 
 	void renderSimpleShapes( LLRender&, float );
 
-	void createPhysicsCapsuleRep( float, float, bool, LLVector3 const, LLUUID const& );
+	void createPhysicsCapsuleRep( float, float, bool, LLUUID const& );
 	void cleanupPhysicsCapsuleRepResiduals();
 
 	void processNavMeshData();

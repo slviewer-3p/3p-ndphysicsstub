@@ -4,6 +4,10 @@ void LLPathingLib::initSystem()
 {
 }
 
+void LLPathingLib::quitSystem()
+{
+}
+
 LLPathingLib* LLPathingLib::getInstance()
 {
 	static LLPathingLib sObj;
@@ -67,7 +71,7 @@ void LLPathingLib::renderSimpleShapes( LLRender&, float )
 {
 }
 
-void LLPathingLib::createPhysicsCapsuleRep( float, float, bool, LLVector3 const, LLUUID const& )
+void LLPathingLib::createPhysicsCapsuleRep( float, float, bool, LLUUID const& )
 {
 }
 
