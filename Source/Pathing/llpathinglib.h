@@ -149,12 +149,13 @@ public:
 	static void quitSystem();
 	static LLPathingLib* getInstance();
 
+	bool isFunctional();
+
 	void extractNavMeshSrcFromLLSD( std::vector< unsigned char> const &aMeshData, int aNavigation );
 
 	LLPLResult generatePath( PathingPacket const& );
 	void cleanupResidual();
 
-	//	void setRenderWorld( bool aRender );
 	void stitchNavMeshes( );
 
 	void renderNavMesh( void );

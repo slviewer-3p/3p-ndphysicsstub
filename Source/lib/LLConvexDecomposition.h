@@ -218,6 +218,8 @@ public:
 	/// Debug
 	virtual void loadMeshData(const char* fileIn, LLCDMeshData** meshDataOut) = 0;
 
+	virtual bool isFunctional()=0;
+
 private:
 	static bool s_isInitialized;
 };

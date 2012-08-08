@@ -5,6 +5,8 @@ class LLPhysicsExtensions
 {
 public:
 	static void quitSystem();
+
+	bool isFunctional();
 };
 
 #endif

@@ -385,3 +385,9 @@ void nd_hacdConvexDecomposition::setTracer( ndConvexDecompositionTracer * aTrace
 	if( mTracer )
 		mTracer->addref();
 }
+
+
+bool nd_hacdConvexDecomposition::isFunctional()
+{
+	return true;
+}

@@ -14,6 +14,11 @@ LLPathingLib* LLPathingLib::getInstance()
 	return &sObj;
 }
 
+bool LLPathingLib::isFunctional()
+{
+	return false;
+}
+
 void LLPathingLib::extractNavMeshSrcFromLLSD( std::vector< unsigned char > const &aMeshData, int aNavigation )
 {
 }
@@ -26,10 +31,6 @@ LLPathingLib::LLPLResult LLPathingLib::generatePath( PathingPacket const& )
 void LLPathingLib::cleanupResidual()
 {
 }
-
-// void LLPathingLib::setRenderWorld( bool aRender )
-// {
-// }
 
 void LLPathingLib::stitchNavMeshes( )
 {
