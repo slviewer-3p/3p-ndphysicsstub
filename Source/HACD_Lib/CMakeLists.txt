@@ -9,4 +9,4 @@ file (GLOB INCLUDE_FILES inc/*.h )
 
 add_library(hacd STATIC ${SOURCE_FILES} ${INCLUDE_FILES} )
 
-install( TARGETS hacd DESTINATION lib/release )
+install( TARGETS hacd DESTINATION ${ND_LIBDIR} )

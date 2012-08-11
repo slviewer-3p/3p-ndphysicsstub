@@ -2,6 +2,12 @@ cmake_minimum_required(VERSION 2.6.4)
 
 set( CMAKE_PROJECT_NAME ndPhysicsStub )
 
+if( PACKAGE_FOR_LL )
+  set( ND_LIBDIR "lib/release")
+else( PACKAGE_FOR_LL )
+  set( ND_LIBDIR "lib/")
+endif( PACKAGE_FOR_LL )
+
 include_directories( Source/HACD_Lib/inc )
 
 add_subdirectory(Source/lib)
