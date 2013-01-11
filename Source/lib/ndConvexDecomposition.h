@@ -32,6 +32,9 @@ public:
 		eTraceFunctions = 0x1,
 		eTraceData = 0x2,
 	};
+	
+	virtual ~ndConvexDecompositionTracer()
+	{ }
 
 	virtual void trace( char const *a_strMsg ) = 0;
 
