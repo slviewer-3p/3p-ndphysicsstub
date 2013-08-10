@@ -1,0 +1,3 @@
+HACD from Khaled Mamou is licesed under BSD, please see http://sourceforge.net/projects/hacd/
+
+The integration into the Second Life viewer is LGPL licensed.
