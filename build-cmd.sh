@@ -27,7 +27,7 @@ case "$AUTOBUILD_PLATFORM" in
 		# Do something windowsy
 	;;
 	"darwin")
-		cmake ../
+		cmake "-DCMAKE_OSX_ARCHITECTURES=x86_64;i386" ../
 		make
 
 		# Copy the new libs
