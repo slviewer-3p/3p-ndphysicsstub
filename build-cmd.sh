@@ -7,6 +7,7 @@ set -x
 # make errors fatal
 set -e
 
+# Check autobuild is around or fail
 if [ -z "$AUTOBUILD" ] ; then 
     fail
 fi
@@ -15,7 +16,6 @@ if [ "$OSTYPE" = "cygwin" ] ; then
     export AUTOBUILD="$(cygpath -u $AUTOBUILD)"
 fi
 
-# load autobuild provided shell functions and variables
 set +x
 eval "$("$AUTOBUILD" source_environment)"
 set -x
@@ -27,6 +27,9 @@ then
  rm -rf "${stage}/lib"
  rm -rf "${stage}/include"
 fi
+
+mkdir -p "$stage/lib/debug"
+mkdir -p "$stage/lib/release"
 
 if [ ! -d "build-${AUTOBUILD_PLATFORM}-${AUTOBUILD_ARCH}" ]
 then
@@ -64,9 +67,6 @@ pushd "build-${AUTOBUILD_PLATFORM}-${AUTOBUILD_ARCH}"
               build_sln "Project.sln" "Debug|Win32" "nd_Pathing"
             fi
 
-            mkdir -p "$stage/lib/debug"
-            mkdir -p "$stage/lib/release"
-
 			cp "Source/HACD_Lib/Debug/hacd.lib" "$stage/lib/debug"
 			cp "Source/HACD_Lib/Release/hacd.lib" "$stage/lib/release"
 
@@ -78,9 +78,23 @@ pushd "build-${AUTOBUILD_PLATFORM}-${AUTOBUILD_ARCH}"
 
         ;;
         "darwin")
+		cmake "-DCMAKE_OSX_ARCHITECTURES=x86_64;i386" ../
+		make
+
+		# Copy the new libs
+		cp "Source/lib/libnd_hacdConvexDecomposition.a" "$stage/lib/release/"
+		cp "Source/Pathing/libnd_Pathing.a" "$stage/lib/release/"
+		cp "Source/HACD_Lib/libhacd.a" "$stage/lib/release/"
         ;;            
 			
         "linux")
+		cmake ../
+		make
+
+		# Copy the new libs (just a guess)
+		cp "Source/lib/libnd_hacdConvexDecomposition.a" "$stage/lib/release/"
+		cp "Source/Pathing/libnd_Pathing.a" "$stage/lib/release/"
+		cp "Source/HACD_Lib/libhacd.a" "$stage/lib/release/"
         ;;
     esac
 popd
