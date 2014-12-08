@@ -28,6 +28,9 @@ then
  rm -rf "${stage}/include"
 fi
 
+build=${AUTOBUILD_BUILD_ID:=0}
+echo "1.${build}" > "${stage}/VERSION.txt"
+
 mkdir -p "$stage/lib/debug"
 mkdir -p "$stage/lib/release"
 
@@ -44,9 +47,9 @@ pushd "build-${AUTOBUILD_PLATFORM}-${AUTOBUILD_ARCH}"
         "windows")
             load_vsvars
 
-            if [ "${AUTOBUILD_ARCH}" == "x64" ]
+            if [ "${ND_AUTOBUILD_ARCH}" == "x64" ]
             then
-              cmake .. -G "Visual Studio 10 Win64"
+              cmake .. -G "Visual Studio 12 Win64"
             
               build_sln "Project.sln" "Release|x64" "hacd"
               build_sln "Project.sln" "Release|x64" "nd_hacdConvexDecomposition"
@@ -56,7 +59,7 @@ pushd "build-${AUTOBUILD_PLATFORM}-${AUTOBUILD_ARCH}"
               build_sln "Project.sln" "Debug|x64" "nd_hacdConvexDecomposition"
               build_sln "Project.sln" "Debug|x64" "nd_Pathing"
             else
-              cmake .. -G "Visual Studio 10"
+              cmake .. -G "Visual Studio 12"
 
               build_sln "Project.sln" "Release|Win32" "hacd"
               build_sln "Project.sln" "Release|Win32" "nd_hacdConvexDecomposition"
