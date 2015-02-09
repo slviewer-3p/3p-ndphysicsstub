@@ -31,6 +31,8 @@ fi
 mkdir -p "$stage/lib/debug"
 mkdir -p "$stage/lib/release"
 
+cp version.txt ${stage}/version.txt
+
 if [ ! -d "build-${AUTOBUILD_PLATFORM}-${AUTOBUILD_ARCH}" ]
 then
   mkdir "build-${AUTOBUILD_PLATFORM}-${AUTOBUILD_ARCH}"
