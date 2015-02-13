@@ -22,6 +22,8 @@
 #include <set>
 #include <vector>
 #include <queue>
+#include <functional>
+#include <algorithm>
 
 namespace HACD
 {
