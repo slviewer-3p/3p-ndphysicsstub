@@ -36,73 +36,64 @@ mkdir -p "$stage/lib/release"
 
 cp version.txt ${stage}/version.txt
 
-if [ ! -d "build-${AUTOBUILD_PLATFORM}-${AUTOBUILD_ARCH}" ]
+if [ ! -d "build-${AUTOBUILD_PLATFORM}" ]
 then
-  mkdir "build-${AUTOBUILD_PLATFORM}-${AUTOBUILD_ARCH}"
+  mkdir "build-${AUTOBUILD_PLATFORM}"
 else
-  rm -rf "build-${AUTOBUILD_PLATFORM}-${AUTOBUILD_ARCH}"
-  mkdir "build-${AUTOBUILD_PLATFORM}-${AUTOBUILD_ARCH}"
+  rm -rf "build-${AUTOBUILD_PLATFORM}"
+  mkdir "build-${AUTOBUILD_PLATFORM}"
 fi
 
-pushd "build-${AUTOBUILD_PLATFORM}-${AUTOBUILD_ARCH}"
-    case "$AUTOBUILD_PLATFORM" in
-        "windows")
+pushd "build-${AUTOBUILD_PLATFORM}"
+    case "${AUTOBUILD_PLATFORM}" in
+        windows*)
             load_vsvars
 
-            if [ "${ND_AUTOBUILD_ARCH}" == "x64" ]
-            then
-              cmake .. -G "Visual Studio 12 Win64"
-            
-              build_sln "Project.sln" "Release|x64" "hacd"
-              build_sln "Project.sln" "Release|x64" "nd_hacdConvexDecomposition"
-              build_sln "Project.sln" "Release|x64" "nd_Pathing"
-
-              build_sln "Project.sln" "Debug|x64" "hacd"
-              build_sln "Project.sln" "Debug|x64" "nd_hacdConvexDecomposition"
-              build_sln "Project.sln" "Debug|x64" "nd_Pathing"
-            else
+            if [ "${AUTOBUILD_WIN_VSPLATFORM}" = "Win32" ] ; then
               cmake .. -G "Visual Studio 12"
-
-              build_sln "Project.sln" "Release|Win32" "hacd"
-              build_sln "Project.sln" "Release|Win32" "nd_hacdConvexDecomposition"
-              build_sln "Project.sln" "Release|Win32" "nd_Pathing"
-
-              build_sln "Project.sln" "Debug|Win32" "hacd"
-              build_sln "Project.sln" "Debug|Win32" "nd_hacdConvexDecomposition"
-              build_sln "Project.sln" "Debug|Win32" "nd_Pathing"
+            else
+              cmake .. -G "Visual Studio 12 Win64"
             fi
 
-			cp "Source/HACD_Lib/Debug/hacd.lib" "$stage/lib/debug"
-			cp "Source/HACD_Lib/Release/hacd.lib" "$stage/lib/release"
+            build_sln "Project.sln" "Release|$AUTOBUILD_WIN_VSPLATFORM" "hacd"
+            build_sln "Project.sln" "Release|$AUTOBUILD_WIN_VSPLATFORM" "nd_hacdConvexDecomposition"
+            build_sln "Project.sln" "Release|$AUTOBUILD_WIN_VSPLATFORM" "nd_Pathing"
 
-			cp "Source/lib/Debug/nd_hacdConvexDecomposition.lib" "$stage/lib/debug"
-			cp "Source/lib/Release/nd_hacdConvexDecomposition.lib" "$stage/lib/release"
+            build_sln "Project.sln" "Debug|$AUTOBUILD_WIN_VSPLATFORM" "hacd"
+            build_sln "Project.sln" "Debug|$AUTOBUILD_WIN_VSPLATFORM" "nd_hacdConvexDecomposition"
+            build_sln "Project.sln" "Debug|$AUTOBUILD_WIN_VSPLATFORM" "nd_Pathing"
 
-			cp "Source/Pathing/Debug/nd_Pathing.lib" "$stage/lib/debug"
-			cp "Source/Pathing/Release/nd_Pathing.lib" "$stage/lib/release"
+            cp "Source/HACD_Lib/Debug/hacd.lib" "$stage/lib/debug"
+            cp "Source/HACD_Lib/Release/hacd.lib" "$stage/lib/release"
 
+            cp "Source/lib/Debug/nd_hacdConvexDecomposition.lib" "$stage/lib/debug"
+            cp "Source/lib/Release/nd_hacdConvexDecomposition.lib" "$stage/lib/release"
+
+            cp "Source/Pathing/Debug/nd_Pathing.lib" "$stage/lib/debug"
+            cp "Source/Pathing/Release/nd_Pathing.lib" "$stage/lib/release"
         ;;
-        "darwin")
-		cmake "-DCMAKE_OSX_ARCHITECTURES=x86_64;i386" \
-		    -DCMAKE_OSX_DEPLOYMENT_TARGET=10.7 \
-		    -DCMAKE_OSX_SYSROOT=/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.9.sdk/ \
-		    ../
-		make
 
-		# Copy the new libs
-		cp "Source/lib/libnd_hacdConvexDecomposition.a" "$stage/lib/release/"
-		cp "Source/Pathing/libnd_Pathing.a" "$stage/lib/release/"
-		cp "Source/HACD_Lib/libhacd.a" "$stage/lib/release/"
-        ;;            
-			
-        "linux")
-		cmake ../
-		make
+        darwin*)
+        cmake "-DCMAKE_OSX_ARCHITECTURES=x86_64;i386" \
+            -DCMAKE_OSX_DEPLOYMENT_TARGET=10.7 \
+            -DCMAKE_OSX_SYSROOT=/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.9.sdk/ \
+            ../
+        make
 
-		# Copy the new libs (just a guess)
-		cp "Source/lib/libnd_hacdConvexDecomposition.a" "$stage/lib/release/"
-		cp "Source/Pathing/libnd_Pathing.a" "$stage/lib/release/"
-		cp "Source/HACD_Lib/libhacd.a" "$stage/lib/release/"
+        # Copy the new libs
+        cp "Source/lib/libnd_hacdConvexDecomposition.a" "$stage/lib/release/"
+        cp "Source/Pathing/libnd_Pathing.a" "$stage/lib/release/"
+        cp "Source/HACD_Lib/libhacd.a" "$stage/lib/release/"
+        ;;
+            
+        linux*)
+        cmake ../
+        make
+
+        # Copy the new libs (just a guess)
+        cp "Source/lib/libnd_hacdConvexDecomposition.a" "$stage/lib/release/"
+        cp "Source/Pathing/libnd_Pathing.a" "$stage/lib/release/"
+        cp "Source/HACD_Lib/libhacd.a" "$stage/lib/release/"
         ;;
     esac
 popd
