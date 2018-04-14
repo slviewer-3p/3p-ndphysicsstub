@@ -88,8 +88,8 @@ pushd "build-${AUTOBUILD_PLATFORM}"
         ;;
             
         linux*)
-        cmake ../
-        make
+        cmake -DCMAKE_CXX_FLAGS=-fPIC ../
+        VERBOSE=1 make
 
         # Copy the new libs (just a guess)
         cp "Source/lib/libnd_hacdConvexDecomposition.a" "$stage/lib/release/"
