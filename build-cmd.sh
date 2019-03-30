@@ -50,9 +50,9 @@ pushd "build-${AUTOBUILD_PLATFORM}"
             load_vsvars
 
             if [ "${AUTOBUILD_WIN_VSPLATFORM}" = "Win32" ] ; then
-              cmake .. -G "Visual Studio 12"
+              cmake .. -G "Visual Studio 15"
             else
-              cmake .. -G "Visual Studio 12 Win64"
+              cmake .. -G "Visual Studio 15 Win64"
             fi
 
             build_sln "Project.sln" "Release|$AUTOBUILD_WIN_VSPLATFORM" "hacd"
