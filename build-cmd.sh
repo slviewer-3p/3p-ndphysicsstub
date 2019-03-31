@@ -36,41 +36,27 @@ mkdir -p "$stage/lib/release"
 
 cp version.txt ${stage}/version.txt
 
-if [ ! -d "build-${AUTOBUILD_PLATFORM}-${AUTOBUILD_ARCH}" ]
+if [ ! -d "build-${AUTOBUILD_PLATFORM}-${AUTOBUILD_WIN_VSPLATFORM}" ]
 then
-  mkdir "build-${AUTOBUILD_PLATFORM}-${AUTOBUILD_ARCH}"
+  mkdir "build-${AUTOBUILD_PLATFORM}-${AUTOBUILD_WIN_VSPLATFORM}"
 else
-  rm -rf "build-${AUTOBUILD_PLATFORM}-${AUTOBUILD_ARCH}"
-  mkdir "build-${AUTOBUILD_PLATFORM}-${AUTOBUILD_ARCH}"
+  rm -rf "build-${AUTOBUILD_PLATFORM}-${AUTOBUILD_WIN_VSPLATFORM}"
+  mkdir "build-${AUTOBUILD_PLATFORM}-${AUTOBUILD_WIN_VSPLATFORM}"
 fi
 
-pushd "build-${AUTOBUILD_PLATFORM}-${AUTOBUILD_ARCH}"
+pushd "build-${AUTOBUILD_PLATFORM}-${AUTOBUILD_WIN_VSPLATFORM}"
     case "$AUTOBUILD_PLATFORM" in
-        "windows")
+        windows*)
             load_vsvars
 
-            if [ "${ND_AUTOBUILD_ARCH}" == "x64" ]
-            then
-              cmake .. -G "Visual Studio 12 Win64"
-            
-              build_sln "Project.sln" "Release|x64" "hacd"
-              build_sln "Project.sln" "Release|x64" "nd_hacdConvexDecomposition"
-              build_sln "Project.sln" "Release|x64" "nd_Pathing"
+            cmake .. -G "${AUTOBUILD_WIN_CMAKE_GEN}"
+            build_sln "Project.sln" "Release|$AUTOBUILD_WIN_VSPLATFORM" "hacd"
+            build_sln "Project.sln" "Release|$AUTOBUILD_WIN_VSPLATFORM" "nd_hacdConvexDecomposition"
+            build_sln "Project.sln" "Release|$AUTOBUILD_WIN_VSPLATFORM" "nd_Pathing"
 
-              build_sln "Project.sln" "Debug|x64" "hacd"
-              build_sln "Project.sln" "Debug|x64" "nd_hacdConvexDecomposition"
-              build_sln "Project.sln" "Debug|x64" "nd_Pathing"
-            else
-              cmake .. -G "Visual Studio 12"
-
-              build_sln "Project.sln" "Release|Win32" "hacd"
-              build_sln "Project.sln" "Release|Win32" "nd_hacdConvexDecomposition"
-              build_sln "Project.sln" "Release|Win32" "nd_Pathing"
-
-              build_sln "Project.sln" "Debug|Win32" "hacd"
-              build_sln "Project.sln" "Debug|Win32" "nd_hacdConvexDecomposition"
-              build_sln "Project.sln" "Debug|Win32" "nd_Pathing"
-            fi
+            build_sln "Project.sln" "Debug|$AUTOBUILD_WIN_VSPLATFORM" "hacd"
+            build_sln "Project.sln" "Debug|$AUTOBUILD_WIN_VSPLATFORM" "nd_hacdConvexDecomposition"
+            build_sln "Project.sln" "Debug|$AUTOBUILD_WIN_VSPLATFORM" "nd_Pathing"
 
 			cp "Source/HACD_Lib/Debug/hacd.lib" "$stage/lib/debug"
 			cp "Source/HACD_Lib/Release/hacd.lib" "$stage/lib/release"
