@@ -36,25 +36,20 @@ mkdir -p "$stage/lib/release"
 
 cp version.txt ${stage}/version.txt
 
-if [ ! -d "build-${AUTOBUILD_PLATFORM}" ]
+if [ ! -d "build-${AUTOBUILD_PLATFORM}-${AUTOBUILD_WIN_VSPLATFORM}" ]
 then
-  mkdir "build-${AUTOBUILD_PLATFORM}"
+  mkdir "build-${AUTOBUILD_PLATFORM}-${AUTOBUILD_WIN_VSPLATFORM}"
 else
-  rm -rf "build-${AUTOBUILD_PLATFORM}"
-  mkdir "build-${AUTOBUILD_PLATFORM}"
+  rm -rf "build-${AUTOBUILD_PLATFORM}-${AUTOBUILD_WIN_VSPLATFORM}"
+  mkdir "build-${AUTOBUILD_PLATFORM}-${AUTOBUILD_WIN_VSPLATFORM}"
 fi
 
-pushd "build-${AUTOBUILD_PLATFORM}"
+pushd "build-${AUTOBUILD_PLATFORM}-${AUTOBUILD_WIN_VSPLATFORM}"
     case "${AUTOBUILD_PLATFORM}" in
         windows*)
             load_vsvars
 
-            if [ "${AUTOBUILD_WIN_VSPLATFORM}" = "Win32" ] ; then
-              cmake .. -G "Visual Studio 15"
-            else
-              cmake .. -G "Visual Studio 15 Win64"
-            fi
-
+            cmake .. -G "${AUTOBUILD_WIN_CMAKE_GEN}"
             build_sln "Project.sln" "Release|$AUTOBUILD_WIN_VSPLATFORM" "hacd"
             build_sln "Project.sln" "Release|$AUTOBUILD_WIN_VSPLATFORM" "nd_hacdConvexDecomposition"
             build_sln "Project.sln" "Release|$AUTOBUILD_WIN_VSPLATFORM" "nd_Pathing"
