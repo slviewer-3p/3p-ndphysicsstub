@@ -55,47 +55,44 @@ public:
 	static LLCDResult quitSystem();
 
 	// Generate a decomposition object handle
-	void genDecomposition( int& decomp );
+	void genDecomposition( int& decomp ) override;
 	// Delete decomposition object handle
-	void deleteDecomposition( int decomp );
+	void deleteDecomposition( int decomp ) override;
 	// Bind given decomposition handle
 	// Commands operate on currently bound decomposition
-	void bindDecomposition( int decomp );
+	void bindDecomposition( int decomp ) override;
 
 	// Sets *paramsOut to the address of the LLCDParam array and returns
 	// the length of the array
-	int getParameters( const LLCDParam** paramsOut );
-	int getStages( const LLCDStageData** stagesOut ) ;
+	int getParameters( const LLCDParam** paramsOut ) override;
+	int getStages( const LLCDStageData** stagesOut ) override ;
 
 	// Set a parameter by name. Returns false if out of bounds or unsupported parameter
-	LLCDResult	setParam( const char* name, float val );
-	LLCDResult	setParam( const char* name, int val );
-	LLCDResult	setParam( const char* name, bool val );
-	LLCDResult	setMeshData( const LLCDMeshData* data, bool vertex_based );
-	LLCDResult	registerCallback( int stage, llcdCallbackFunc callback );
+	LLCDResult	setParam( const char* name, float val ) override;
+	LLCDResult	setParam( const char* name, int val ) override;
+	LLCDResult	setParam( const char* name, bool val ) override;
+	LLCDResult	setMeshData( const LLCDMeshData* data, bool vertex_based ) override;
+	LLCDResult	registerCallback( int stage, llcdCallbackFunc callback ) override;
 
-	LLCDResult	executeStage( int stage );
-	LLCDResult	buildSingleHull() ;
+	LLCDResult	executeStage( int stage ) override;
+	LLCDResult	buildSingleHull()  override;
 
-	int getNumHullsFromStage( int stage );
+	int getNumHullsFromStage( int stage ) override;
 
-	LLCDResult	getHullFromStage( int stage, int hull, LLCDHull* hullOut );
-	LLCDResult  getSingleHull( LLCDHull* hullOut ) ;
+	LLCDResult	getHullFromStage( int stage, int hull, LLCDHull* hullOut ) override;
+	LLCDResult  getSingleHull( LLCDHull* hullOut )  override;
 
 	// TODO: Implement lock of some kind to disallow this call if data not yet ready
-	LLCDResult	getMeshFromStage( int stage, int hull, LLCDMeshData* meshDataOut );
-	LLCDResult	getMeshFromHull( LLCDHull* hullIn, LLCDMeshData* meshOut );
+	LLCDResult	getMeshFromStage( int stage, int hull, LLCDMeshData* meshDataOut ) override;
+	LLCDResult	getMeshFromHull( LLCDHull* hullIn, LLCDMeshData* meshOut ) override;
 
 	// For visualizing convex hull shapes in the viewer physics shape display
-	LLCDResult generateSingleHullMeshFromMesh( LLCDMeshData* meshIn, LLCDMeshData* meshOut );
+	LLCDResult generateSingleHullMeshFromMesh( LLCDMeshData* meshIn, LLCDMeshData* meshOut ) override;
 
 	/// Debug
-	void loadMeshData( const char* fileIn, LLCDMeshData** meshDataOut );
+	void loadMeshData( const char* fileIn, LLCDMeshData** meshDataOut ) override;
 
 	virtual void setTracer( ndConvexDecompositionTracer *);
-
-	virtual bool isFunctional();
-
 private:
 	nd_hacdConvexDecomposition();
 };
