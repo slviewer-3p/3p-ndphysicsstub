@@ -83,7 +83,8 @@ pushd "build-${AUTOBUILD_PLATFORM}-${AUTOBUILD_WIN_VSPLATFORM}"
         ;;
             
         linux*)
-        cmake -DCMAKE_CXX_FLAGS=-fPIC ../
+        cmake -DCMAKE_C_FLAGS:STRING="$LL_BUILD_RELEASE -m${AUTOBUILD_ADDRSIZE}" \
+			  -DCMAKE_CXX_FLAGS:STRING="$LL_BUILD_RELEASE -m${AUTOBUILD_ADDRSIZE}" ..
         VERBOSE=1 make
 
         # Copy the new libs (just a guess)
