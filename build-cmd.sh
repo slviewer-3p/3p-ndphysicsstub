@@ -69,10 +69,10 @@ pushd "build-${AUTOBUILD_PLATFORM}-${AUTOBUILD_WIN_VSPLATFORM}"
         ;;
 
         darwin*)
-        cmake "-DCMAKE_OSX_ARCHITECTURES=x86_64;i386" \
-            -DCMAKE_OSX_DEPLOYMENT_TARGET=10.7 \
-            -DCMAKE_OSX_SYSROOT=/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.11.sdk/ \
-            -DCMAKE_CXX_FLAGS="-std=c++11 -stdlib=libc++" \
+        cmake "-DCMAKE_OSX_ARCHITECTURES=x86_64" \
+            -DCMAKE_OSX_DEPLOYMENT_TARGET=10.11 \
+            -DCMAKE_OSX_SYSROOT=/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.15.sdk/ \
+            -DCMAKE_CXX_FLAGS="-std=c++14 -stdlib=libc++" \
             ../
         make
 
