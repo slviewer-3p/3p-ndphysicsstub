@@ -36,25 +36,20 @@ mkdir -p "$stage/lib/release"
 
 cp version.txt ${stage}/version.txt
 
-if [ ! -d "build-${AUTOBUILD_PLATFORM}" ]
+if [ ! -d "build-${AUTOBUILD_PLATFORM}-${AUTOBUILD_WIN_VSPLATFORM}" ]
 then
-  mkdir "build-${AUTOBUILD_PLATFORM}"
+  mkdir "build-${AUTOBUILD_PLATFORM}-${AUTOBUILD_WIN_VSPLATFORM}"
 else
-  rm -rf "build-${AUTOBUILD_PLATFORM}"
-  mkdir "build-${AUTOBUILD_PLATFORM}"
+  rm -rf "build-${AUTOBUILD_PLATFORM}-${AUTOBUILD_WIN_VSPLATFORM}"
+  mkdir "build-${AUTOBUILD_PLATFORM}-${AUTOBUILD_WIN_VSPLATFORM}"
 fi
 
-pushd "build-${AUTOBUILD_PLATFORM}"
+pushd "build-${AUTOBUILD_PLATFORM}-${AUTOBUILD_WIN_VSPLATFORM}"
     case "${AUTOBUILD_PLATFORM}" in
         windows*)
             load_vsvars
 
-            if [ "${AUTOBUILD_WIN_VSPLATFORM}" = "Win32" ] ; then
-              cmake .. -G "Visual Studio 12"
-            else
-              cmake .. -G "Visual Studio 12 Win64"
-            fi
-
+            cmake .. -G "${AUTOBUILD_WIN_CMAKE_GEN}"
             build_sln "Project.sln" "Release|$AUTOBUILD_WIN_VSPLATFORM" "hacd"
             build_sln "Project.sln" "Release|$AUTOBUILD_WIN_VSPLATFORM" "nd_hacdConvexDecomposition"
             build_sln "Project.sln" "Release|$AUTOBUILD_WIN_VSPLATFORM" "nd_Pathing"
@@ -74,10 +69,10 @@ pushd "build-${AUTOBUILD_PLATFORM}"
         ;;
 
         darwin*)
-        cmake "-DCMAKE_OSX_ARCHITECTURES=x86_64;i386" \
-            -DCMAKE_OSX_DEPLOYMENT_TARGET=10.7 \
-            -DCMAKE_OSX_SYSROOT=/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.11.sdk/ \
-            -DCMAKE_CXX_FLAGS="-std=c++11 -stdlib=libc++" \
+        cmake "-DCMAKE_OSX_ARCHITECTURES=x86_64" \
+            -DCMAKE_OSX_DEPLOYMENT_TARGET=10.11 \
+            -DCMAKE_OSX_SYSROOT=/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.15.sdk/ \
+            -DCMAKE_CXX_FLAGS="-std=c++14 -stdlib=libc++" \
             ../
         make
 
@@ -88,7 +83,8 @@ pushd "build-${AUTOBUILD_PLATFORM}"
         ;;
             
         linux*)
-        cmake -DCMAKE_CXX_FLAGS=-fPIC ../
+        cmake -DCMAKE_C_FLAGS:STRING="$LL_BUILD_RELEASE -m${AUTOBUILD_ADDRSIZE}" \
+			  -DCMAKE_CXX_FLAGS:STRING="$LL_BUILD_RELEASE -m${AUTOBUILD_ADDRSIZE}" ..
         VERBOSE=1 make
 
         # Copy the new libs (just a guess)
