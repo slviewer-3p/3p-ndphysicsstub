@@ -3,6 +3,8 @@
 <map>
     <key>package_description</key>
     <map>
+      <key>canonical_repo</key>
+      <string>https://github.com/slviewer-3p/3p-ndphysicsstub</string>
       <key>copyright</key>
       <string>Khaled Mamou (HACD) / Nicky Dasmijn (integration into for SL viewer)</string>
       <key>description</key>
